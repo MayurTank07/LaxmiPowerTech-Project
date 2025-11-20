@@ -81,6 +81,12 @@ export default function UploadPhoto() {
       formData.append('image', selectedImage);
       formData.append('uploadedBy', user._id || user.id);
 
+      console.log('📤 Uploading indent photo...');
+      console.log('🆔 Indent ID:', indentId);
+      console.log('👤 User ID:', user._id || user.id);
+      console.log('📸 Image:', selectedImage.name, selectedImage.size, 'bytes');
+      console.log('🌐 Endpoint: /indents/upload-photo');
+
       const response = await axios.post('/indents/upload-photo', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -97,7 +103,10 @@ export default function UploadPhoto() {
         }, 1500);
       }
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('❌ Upload error:', error);
+      console.error('❌ Error response:', error.response);
+      console.error('❌ Error status:', error.response?.status);
+      console.error('❌ Error data:', error.response?.data);
       toast.error(error.response?.data?.message || 'Failed to upload intent list');
     } finally {
       setUploading(false);
