@@ -74,7 +74,7 @@ const uploadToServer = async (file, parsedData) => {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-gray-800">
-            Upload an Indent List / See Existing Indent List
+            Upload an Indent List / See Existing Indent List 1
           </h1>
           <p className="text-sm text-gray-500">Supported file: .xlsx</p>
         </div>
