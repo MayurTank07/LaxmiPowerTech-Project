@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import { FileUp, ShoppingCart } from "lucide-react";
+import { FileUp, ShoppingCart, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function AddIndentPopup({ onClose, onUploadClick }) {
@@ -19,6 +19,11 @@ export default function AddIndentPopup({ onClose, onUploadClick }) {
   const handleCreateIntent = () => {
     onClose(); // close popup
     navigate("/material/intent/new"); // go to create intent (PO) page
+  };
+
+  const handleUploadIntentList = () => {
+    onClose(); // close popup
+    navigate("/material/upload-photo"); // go to upload photo page
   };
 
   return (
@@ -44,6 +49,19 @@ export default function AddIndentPopup({ onClose, onUploadClick }) {
             <div className="text-left flex-1">
               <p className="font-bold text-gray-900">Create Intent (PO)</p>
               <p className="text-xs text-gray-600 mt-0.5">Fill form to create new intent</p>
+            </div>
+          </button>
+
+          <button
+            onClick={handleUploadIntentList}
+            className="flex items-center space-x-4 bg-gradient-to-r from-blue-50 to-blue-100 text-gray-900 font-semibold p-4 rounded-xl hover:from-blue-100 hover:to-blue-200 transition-all shadow-sm hover:shadow-md transform hover:scale-[1.02]"
+          >
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md">
+              <Upload size={22} className="text-white" />
+            </div>
+            <div className="text-left flex-1">
+              <p className="font-bold text-gray-900">Upload Intent List</p>
+              <p className="text-xs text-gray-600 mt-0.5">Upload photo of material list</p>
             </div>
           </button>
 

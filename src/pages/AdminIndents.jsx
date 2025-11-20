@@ -284,7 +284,10 @@ export default function AdminIndents() {
             </div>
 
             <div className="space-y-2 text-sm">
-              <div><span className="text-gray-500">Requester:</span> {active.requester?.username || "—"} ({active.requester?.role || "—"})</div>
+              {active.indentId && (
+                <div><span className="text-gray-500">Indent ID:</span> <span className="font-semibold">{active.indentId}</span></div>
+              )}
+              <div><span className="text-gray-500">Requester:</span> {active.requester?.username || active.requestedBy?.name || "—"} ({active.requester?.role || active.requestedBy?.role || "—"})</div>
               <div><span className="text-gray-500">Project:</span> {active.project?.name || "—"}</div>
               <div><span className="text-gray-500">Branch:</span> {active.branch?.name || "—"}</div>
               <div><span className="text-gray-500">Purpose:</span> {active.purpose || "—"}</div>
@@ -295,6 +298,26 @@ export default function AdminIndents() {
                 <div><span className="text-gray-500">Issued:</span> {active.issuedAt ? dayjs(active.issuedAt).format("DD MMM, HH:mm") : "—"}</div>
               </div>
             </div>
+
+            {/* Photo Display */}
+            {active.photoUrl && (
+              <div className="mt-4">
+                <h4 className="font-medium mb-2">Uploaded Photo</h4>
+                <div className="border rounded-lg overflow-hidden">
+                  <img 
+                    src={active.photoUrl} 
+                    alt="Indent List" 
+                    className="w-full h-auto max-h-96 object-contain bg-gray-50 cursor-pointer"
+                    onClick={() => window.open(active.photoUrl, '_blank')}
+                  />
+                  {active.fileName && (
+                    <div className="px-3 py-2 bg-gray-50 text-xs text-gray-600 border-t">
+                      {active.fileName}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="mt-4">
               <h4 className="font-medium mb-2">Items</h4>
