@@ -55,7 +55,7 @@ export default function IndentTable({ data }) {
 
                 // Normal text cell
                 return (
-                  <td key={col} className="border px-4 py-2">
+                  <td key={col} className="border px-4 py-2 text-black">
                     {String(value || "-")}
                   </td>
                 );
