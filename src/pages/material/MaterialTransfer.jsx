@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import MaterialTransferForm from "./MaterialTransferForm";
 import { siteTransferAPI } from "../../utils/materialAPI";
 
-export default function MaterialTransfer() {
+export default function MaterialTransfer({ isTabView = false }) {
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [transfers, setTransfers] = useState([]);
@@ -115,7 +115,7 @@ export default function MaterialTransfer() {
   return (
     <>
       {/* Transfer List - Mobile-First */}
-      <div className="px-3 pb-20 pt-3">
+      <div className={isTabView ? "px-6 pb-20 pt-6" : "px-3 pb-20 pt-3"}>
         {loading ? (
           <div className="flex justify-center items-center py-10">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-500"></div>

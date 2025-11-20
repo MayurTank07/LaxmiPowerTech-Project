@@ -125,11 +125,11 @@ function App() {
         <Route path="/admindashboard" element={<AdminDashboard />} />
 
         {/* Client-Side Material Routes */}
-        <Route path="/material/intent" element={<Intent />} />
+        <Route path="/material/intent" element={<Material activeTab="intent" />} />
         <Route path="/material/intent/new" element={<IntentForm />} />
         <Route path="/material/intent/:id" element={<IntentCardDetails />} />
         <Route path="/material/transfer" element={<Material activeTab="transfer" />} />
-        <Route path="/material/deliveries" element={<UpcomingDeliveries />} />
+        <Route path="/material/deliveries" element={<Material activeTab="deliveries" />} />
         <Route path="/material/grn" element={<Material activeTab="grn" />} />
 
         {/* Material Management Routes - Following existing flat route pattern */}

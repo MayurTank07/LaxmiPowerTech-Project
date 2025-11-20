@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { upcomingDeliveryAPI } from "../../utils/materialAPI";
 import { Search } from "lucide-react";
 
-export default function UpcomingDeliveries() {
+export default function UpcomingDeliveries({ isTabView = false }) {
     const navigate = useNavigate();
     const [deliveries, setDeliveries] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -123,7 +123,7 @@ export default function UpcomingDeliveries() {
     };
 
     return (
-        <div className="p-3">
+        <div className={isTabView ? "px-6 py-6" : "p-3"}>
             {/* Filter and Search */}
             <div className="mb-4 space-y-3">
                 {/* Type Filter */}
