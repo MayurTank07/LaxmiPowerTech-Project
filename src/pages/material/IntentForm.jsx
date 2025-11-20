@@ -298,7 +298,7 @@ export default function IntentForm() {
         alert('Intent (PO) created successfully!');
         
         // Redirect to Indent tab
-        navigate('/material/indent');
+        navigate('/dashboard/material/intent');
       }
     } catch (error) {
       // Error creating purchase order

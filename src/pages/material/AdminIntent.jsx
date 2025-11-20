@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { purchaseOrderAPI, materialCatalogAPI as materialAPI } from "../../utils/materialAPI";
 import { Eye, Trash2, X, Edit2, Save, Plus } from "lucide-react";
 import MaterialLineItem from "./MaterialLineItem";
+import DashboardLayout from "../../layouts/DashboardLayout";
 
 export default function AdminIntent() {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
@@ -336,6 +337,7 @@ export default function AdminIntent() {
   };
 
   return (
+    <DashboardLayout title="Intent (PO)">
     <div className="flex-1 p-6 bg-gray-50">
       <div className="flex justify-between items-center mb-6">
         <div>
@@ -720,5 +722,6 @@ export default function AdminIntent() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   );
 }

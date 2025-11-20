@@ -18,7 +18,7 @@ export default function AddIndentPopup({ onClose, onUploadClick }) {
 
   const handleCreateIntent = () => {
     onClose(); // close popup
-    navigate("/material/intent/new"); // go to create intent (PO) page
+    navigate("/dashboard/material/intent/new"); // go to create intent (PO) page
   };
 
   return (

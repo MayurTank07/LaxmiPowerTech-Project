@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { upcomingDeliveryAPI } from "../../utils/materialAPI";
 import { Eye, Trash2, X, Edit2, Save } from "lucide-react";
+import DashboardLayout from "../../layouts/DashboardLayout";
 
 export default function AdminUpcomingDeliveries() {
   const [deliveries, setDeliveries] = useState([]);
@@ -226,6 +227,7 @@ export default function AdminUpcomingDeliveries() {
   };
 
   return (
+    <DashboardLayout title="Upcoming Deliveries">
     <div className="flex-1 p-6 bg-gray-50">
       <div className="flex justify-between items-center mb-6">
         <div>
@@ -535,5 +537,6 @@ export default function AdminUpcomingDeliveries() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   );
 }

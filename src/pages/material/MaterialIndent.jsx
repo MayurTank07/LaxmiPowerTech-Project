@@ -13,7 +13,7 @@ export default function MaterialIndent() {
 
   const handleUploadClick = () => {
     setShowPopup(false);
-    navigate("/material/upload-photo");
+    navigate("/dashboard/material/upload-photo");
   };
 
   // Fetch purchase orders
@@ -129,7 +129,7 @@ export default function MaterialIndent() {
             {purchaseOrders.map((po) => (
               <div
                 key={po._id}
-                onClick={() => navigate(`/material/intent/${po._id}`)}
+                onClick={() => navigate(`/dashboard/material/intent/${po._id}`)}
                 className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
               >
                 {/* Header */}

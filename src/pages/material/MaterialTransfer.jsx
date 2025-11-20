@@ -125,7 +125,7 @@ export default function MaterialTransfer() {
             {transfers.map((transfer) => (
               <div
                 key={transfer._id}
-                onClick={() => navigate(`/material/transfer/${transfer._id}`)}
+                onClick={() => navigate(`/dashboard/material/transfer/${transfer._id}`)}
                 className="border rounded-xl p-3 shadow-sm bg-gray-50 text-sm mb-3 cursor-pointer hover:shadow-md hover:bg-white transition-all active:scale-[0.98]"
               >
                 <div className="flex justify-between items-start mb-2">

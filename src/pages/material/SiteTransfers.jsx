@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { siteTransferAPI } from "../../utils/materialAPI";
 import { Eye, Trash2, X, Edit2, Save } from "lucide-react";
+import DashboardLayout from "../../layouts/DashboardLayout";
 
 export default function SiteTransfers() {
   const [transfers, setTransfers] = useState([]);
@@ -306,6 +307,7 @@ export default function SiteTransfers() {
   };
 
   return (
+    <DashboardLayout title="Site Transfers">
     <div className="flex-1 p-6 bg-gray-50">
       <div className="flex justify-between items-center mb-6">
         <div>
@@ -806,5 +808,6 @@ export default function SiteTransfers() {
         </div>
       )}
     </div>
+    </DashboardLayout>
   );
 }
