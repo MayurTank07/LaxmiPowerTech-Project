@@ -38,8 +38,12 @@ import IntentCardDetails from './pages/material/IntentCardDetails';
 import UpcomingDeliveries from './pages/material/UpcomingDeliveries';
 import DeliveryDetails from './pages/material/DeliveryDetails';
 import DeliveryChecklist from './pages/material/DeliveryChecklist';
-import MaterialAdminDashboard from './pages/material/AdminDashboard';
+import UploadIndent from './components/material/UploadIndent';
+import SiteTransfers from './pages/material/SiteTransfers';
+import AdminUpcomingDeliveries from './pages/material/AdminUpcomingDeliveries';
+import AdminIntent from './pages/material/AdminIntent';
 import UploadPhoto from './pages/material/UploadPhoto';
+import DashboardLayout from './layouts/DashboardLayout';
 
 function App() {
   const user = JSON.parse(localStorage.getItem('user'));
@@ -116,20 +120,24 @@ function App() {
 <Route path="/reimbursements/new" element={<CreateReimbursement />} />
 <Route path="/admin/reimbursements" element={<AdminReimbursements />} />
 
-        {/* Material Management Routes */}
-        <Route path="/material/indent" element={<Material activeTab="indent" />} />
-        <Route path="/material/transfer" element={<Material activeTab="transfer" />} />
-        <Route path="/material/deliveries" element={<Material activeTab="deliveries" />} />
-        <Route path="/material/grn" element={<Material activeTab="grn" />} />
-        <Route path="/material/transfer/new" element={<MaterialTransferForm />} />
-        <Route path="/material/intent/new" element={<IntentForm />} />
-        <Route path="/material/transfer/:id" element={<MaterialCardDetails />} />
-        <Route path="/material/intent/:id" element={<IntentCardDetails />} />
-        <Route path="/material/upcoming-deliveries" element={<UpcomingDeliveries />} />
-        <Route path="/material/deliveries/:id" element={<DeliveryDetails />} />
-        <Route path="/material/delivery-checklist/:id" element={<DeliveryChecklist />} />
-        <Route path="/material/admin" element={<MaterialAdminDashboard />} />
-        <Route path="/material/upload-photo" element={<UploadPhoto />} />
+        {/* Material Management Routes - Nested inside DashboardLayout */}
+        <Route path="/material" element={<DashboardLayout />}>
+          <Route path="admin" element={<UploadIndent />} />
+          <Route path="upload-indent" element={<UploadIndent />} />
+          <Route path="transfer" element={<SiteTransfers />} />
+          <Route path="deliveries" element={<AdminUpcomingDeliveries />} />
+          <Route path="indent" element={<AdminIntent />} />
+          <Route path="grn" element={<Material activeTab="grn" />} />
+          <Route path="transfer/new" element={<MaterialTransferForm />} />
+          <Route path="intent/new" element={<IntentForm />} />
+          <Route path="transfer/:id" element={<MaterialCardDetails />} />
+          <Route path="intent/:id" element={<IntentCardDetails />} />
+          <Route path="upcoming-deliveries" element={<UpcomingDeliveries />} />
+          <Route path="deliveries/:id" element={<DeliveryDetails />} />
+          <Route path="delivery-checklist/:id" element={<DeliveryChecklist />} />
+          <Route path="upload-photo" element={<UploadPhoto />} />
+          <Route index element={<Navigate to="admin" replace />} />
+        </Route>
 
       </Routes>
     </>

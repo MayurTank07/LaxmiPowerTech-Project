@@ -23,7 +23,7 @@ export default function UploadPhoto() {
       </div>
 
       <button
-        onClick={() => navigate("/indent")} // navigate back to Indent page
+        onClick={() => navigate("/material/indent")} // navigate back to Indent page
         className="mt-6 w-full py-2 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200"
       >
         ← Back

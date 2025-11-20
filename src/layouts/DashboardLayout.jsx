@@ -19,7 +19,7 @@ import { FiPackage } from "react-icons/fi";
 import { BiUserCheck } from "react-icons/bi";
 import { FaFileUpload, FaTruck, FaClipboardCheck, FaShoppingCart } from "react-icons/fa";
 import { MdInventory } from "react-icons/md";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, Outlet } from "react-router-dom";
 import logo from "../assets/logo.png";
 import avatar from "../assets/avatar.png";
 import { useState, useEffect } from 'react';
@@ -275,7 +275,7 @@ const DashboardLayout = ({ children, title }) => {
 
         {/* Children (Main page content) */}
         <div className="flex-1 overflow-y-auto bg-gray-50 p-4 lg:p-6">
-          {children}
+          {children || <Outlet />}
         </div>
       </div>
     </div>

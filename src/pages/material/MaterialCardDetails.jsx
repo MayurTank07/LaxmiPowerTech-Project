@@ -225,7 +225,7 @@ export default function MaterialCardDetails() {
       const response = await siteTransferAPI.delete(id);
       if (response.success) {
         alert('Site transfer and associated files deleted successfully');
-        navigate('/transfer');
+        navigate('/material/transfer');
       }
     } catch (err) {
       // Error deleting site transfer
@@ -351,7 +351,7 @@ export default function MaterialCardDetails() {
       <div className="flex flex-col items-center justify-center h-screen px-4">
         <p className="text-gray-600 mb-4">Transfer not found</p>
         <button
-          onClick={() => navigate('/transfer')}
+          onClick={() => navigate('/material/transfer')}
           className="px-4 py-2 bg-orange-500 text-white rounded-lg"
         >
           Back to Transfers
@@ -686,7 +686,7 @@ export default function MaterialCardDetails() {
       <div className="bg-white shadow-sm sticky top-0 z-10">
         <div className="px-4 py-3 flex items-center justify-between">
           <button
-            onClick={() => navigate('/transfer')}
+            onClick={() => navigate('/material/transfer')}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
             <ArrowLeft size={20} className="text-gray-700" />
@@ -911,7 +911,7 @@ export default function MaterialCardDetails() {
           ) : (
             <div className="flex gap-3">
               <button
-                onClick={() => navigate('/transfer')}
+                onClick={() => navigate('/material/transfer')}
                 className="flex-1 bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-300 transition-colors"
               >
                 Back

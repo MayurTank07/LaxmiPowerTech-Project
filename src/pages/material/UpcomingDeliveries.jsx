@@ -84,7 +84,7 @@ export default function UpcomingDeliveries() {
     };
 
     const handleClick = (delivery) => {
-        navigate(`/delivery-checklist/${delivery._id}`);
+        navigate(`/material/delivery-checklist/${delivery._id}`);
     };
 
     // Filter deliveries by search term and type
