@@ -18,34 +18,40 @@ export default function AddIndentPopup({ onClose, onUploadClick }) {
 
   const handleCreateIntent = () => {
     onClose(); // close popup
-    navigate("/dashboard/material/intent/new"); // go to create intent (PO) page
+    navigate("/material/intent/new"); // go to create intent (PO) page
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-end justify-center z-50">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end justify-center z-50 animate-fade-in">
       <div
         ref={popupRef}
-        className="bg-white rounded-t-2xl w-full max-w-[390px] p-6 shadow-xl animate-slide-up"
+        className="bg-white rounded-t-3xl w-full max-w-md p-6 shadow-2xl animate-slide-up"
       >
-        <h3 className="text-orange-500 font-semibold text-base mb-4">
-          Create New Indent
+        <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-6"></div>
+        
+        <h3 className="text-gray-900 font-bold text-lg mb-6">
+          Create New Intent
         </h3>
 
-        <div className="flex flex-col space-y-4">
+        <div className="flex flex-col space-y-3">
           <button
             onClick={handleCreateIntent}
-            className="flex items-center space-x-3 text-gray-800 font-medium hover:text-orange-600 transition"
+            className="flex items-center space-x-4 bg-gradient-to-r from-orange-50 to-orange-100 text-gray-900 font-semibold p-4 rounded-xl hover:from-orange-100 hover:to-orange-200 transition-all shadow-sm hover:shadow-md transform hover:scale-[1.02]"
           >
-            <ShoppingCart size={20} className="text-orange-500" />
-            <span>Create Intent List (PO)</span>
+            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-md">
+              <ShoppingCart size={22} className="text-white" />
+            </div>
+            <div className="text-left flex-1">
+              <p className="font-bold text-gray-900">Create Intent (PO)</p>
+              <p className="text-xs text-gray-600 mt-0.5">Fill form to create new intent</p>
+            </div>
           </button>
 
           <button
-            onClick={onUploadClick}
-            className="flex items-center space-x-3 text-gray-800 font-medium hover:text-orange-600 transition"
+            onClick={onClose}
+            className="flex items-center justify-center space-x-2 bg-white border-2 border-gray-200 text-gray-700 font-semibold p-4 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
           >
-            <FileUp size={20} className="text-orange-500" />
-            <span>Upload Photo</span>
+            <span>Cancel</span>
           </button>
         </div>
       </div>

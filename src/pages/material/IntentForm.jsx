@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, X, Upload, ChevronDown } from 'lucide-react';
 import { purchaseOrderAPI, materialCatalogAPI as materialAPI } from '../../utils/materialAPI';
 import { useNavigate } from 'react-router-dom';
+import { FaArrowLeft } from 'react-icons/fa';
 import axios from '../../utils/axios';
 
 // Searchable Dropdown Component
@@ -319,88 +320,96 @@ export default function IntentForm() {
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-b from-gray-50 to-gray-200 z-50 flex justify-center">
-      <div className="w-full max-w-[390px] h-full bg-white shadow-2xl overflow-y-auto relative pb-24">
-        {/* Form Content */}
-        <div className="bg-white">
-          {/* Header with Back Button */}
-          <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-200">
-            <button
-              onClick={() => navigate('/material/intent')}
-              className="p-0 hover:opacity-70 transition-opacity"
-              disabled={submitting}
-            >
-              <ArrowLeft size={20} className="text-gray-800" />
-            </button>
-            <h2 className="text-base font-medium text-gray-900">Create Intent (PO)</h2>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50">
+      {/* Container with consistent mobile width */}
+      <div className="max-w-md mx-auto min-h-screen bg-white shadow-xl">
+        {/* Header with Gradient */}
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 pt-6 pb-8 rounded-b-3xl shadow-lg relative">
+          <button
+            className="absolute top-6 left-6 text-white flex items-center gap-2 hover:bg-white/20 px-3 py-1.5 rounded-full transition-all"
+            onClick={() => navigate('/material/intent')}
+            disabled={submitting}
+          >
+            <FaArrowLeft size={16} />
+            <span className="text-sm font-medium">Back</span>
+          </button>
+
+          <div className="text-center pt-8">
+            <h1 className="text-white text-2xl font-bold mb-2">Create Intent (PO)</h1>
+            <p className="text-white/80 text-sm">Fill in the details below</p>
           </div>
+        </div>
 
+        {/* Main Content */}
+        <div className="px-6 py-6 -mt-4">
           {/* Form Content Inside Card */}
-          <form onSubmit={handleSubmit} className="px-4 py-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Basic Info Section */}
-            <h3 className="text-blue-600 font-semibold text-xs mb-3">Intent Information</h3>
+            <div className="bg-gradient-to-r from-gray-50 to-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+              <h3 className="text-orange-600 font-bold text-sm mb-4">Intent Information</h3>
 
-            <div className="mb-3">
-              <label className="text-gray-700 text-xs mb-1.5 block">
-                Requested By <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.requestedBy}
-                className="w-full bg-gray-100 border border-gray-300 rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none cursor-not-allowed"
-                placeholder="Enter your name"
-                required
-                readOnly
-                disabled
-              />
-            </div>
+              <div className="mb-4">
+                <label className="text-gray-700 text-sm font-medium mb-2 block">
+                  Requested By <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.requestedBy}
+                  className="w-full bg-gray-100 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 focus:outline-none cursor-not-allowed font-medium"
+                  placeholder="Enter your name"
+                  required
+                  readOnly
+                  disabled
+                />
+              </div>
 
-            <div className="mb-3">
-              <label className="text-gray-700 text-xs mb-1.5 block">
-                Delivery Site <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={formData.deliverySite}
-                onChange={(e) => setFormData(prev => ({ ...prev, deliverySite: e.target.value }))}
-                className="w-full bg-white border border-gray-300 rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-gray-400 appearance-none"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                  backgroundPosition: 'right 0.5rem center',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundSize: '1.5em 1.5em'
-                }}
-                required
-                disabled={submitting}
-              >
-                <option value="">Select delivery site</option>
-                {sites.map(site => (
-                  <option key={site} value={site}>{site}</option>
-                ))}
-              </select>
-            </div>
+              <div className="mb-4">
+                <label className="text-gray-700 text-sm font-medium mb-2 block">
+                  Delivery Site <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.deliverySite}
+                  onChange={(e) => setFormData(prev => ({ ...prev, deliverySite: e.target.value }))}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 appearance-none font-medium"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23f97316' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+                    backgroundPosition: 'right 1rem center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: '1.25em 1.25em'
+                  }}
+                  required
+                  disabled={submitting}
+                >
+                  <option value="">Select delivery site</option>
+                  {sites.map(site => (
+                    <option key={site} value={site}>{site}</option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="mb-3">
-              <label className="text-gray-700 text-xs mb-1.5 block">
-                Remarks (Optional)
-              </label>
-              <textarea
-                value={formData.remarks}
-                onChange={(e) => setFormData(prev => ({ ...prev, remarks: e.target.value }))}
-                className="w-full bg-white border border-gray-300 rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-gray-400"
-                placeholder="Add any additional notes..."
-                rows={3}
-                disabled={submitting}
-              />
+              <div>
+                <label className="text-gray-700 text-sm font-medium mb-2 block">
+                  Remarks (Optional)
+                </label>
+                <textarea
+                  value={formData.remarks}
+                  onChange={(e) => setFormData(prev => ({ ...prev, remarks: e.target.value }))}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 resize-none"
+                  placeholder="Add any additional notes..."
+                  rows={3}
+                  disabled={submitting}
+                />
+              </div>
             </div>
 
             {/* Materials Section */}
-            <div className="border-t pt-4 mt-4">
-              <h3 className="text-blue-600 font-semibold text-xs mb-3">Materials</h3>
+            <div className="bg-gradient-to-r from-gray-50 to-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+              <h3 className="text-orange-600 font-bold text-sm mb-4">Materials</h3>
               
               <button
                 type="button"
                 onClick={addMaterialRow}
-                className="w-full mb-3 py-2.5 border border-gray-300 text-gray-700 rounded-md font-medium text-sm hover:bg-gray-50 transition-colors"
+                className="w-full mb-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl font-semibold text-sm hover:from-orange-600 hover:to-orange-700 transition-all shadow-md hover:shadow-lg transform hover:scale-[1.02]"
                 disabled={submitting}
               >
                 + Add Material
@@ -598,86 +607,91 @@ export default function IntentForm() {
               )}
             </div>
 
-        {/* Attachments Section */}
-        <div className="border-t pt-4 mt-4">
-          <h3 className="text-blue-600 font-semibold text-xs mb-3">Attachments (Optional)</h3>
-            
-            <div className="mb-3">
-              <label className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-orange-400 hover:bg-orange-50 transition-colors">
-                <div className="flex flex-col items-center">
-                  <Upload size={20} className="text-gray-400 mb-1" />
-                  <span className="text-xs text-gray-600">Click to upload images</span>
+            {/* Attachments Section */}
+            <div className="bg-gradient-to-r from-gray-50 to-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+              <h3 className="text-orange-600 font-bold text-sm mb-4">Attachments (Optional)</h3>
+              
+              <div className="mb-4">
+                <label className="flex items-center justify-center w-full px-6 py-6 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-orange-400 hover:bg-orange-50 transition-all">
+                  <div className="flex flex-col items-center">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center mb-2">
+                      <Upload size={20} className="text-orange-500" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">Click to upload images</span>
+                    <span className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</span>
+                  </div>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    disabled={submitting}
+                  />
+                </label>
+              </div>
+
+              {imagePreviews.length > 0 && (
+                <div className="grid grid-cols-3 gap-3">
+                  {imagePreviews.map((preview, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={preview}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-xl border-2 border-gray-200 shadow-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute -top-2 -right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-lg transition-all transform hover:scale-110"
+                        disabled={submitting}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  disabled={submitting}
-                />
-              </label>
+              )}
             </div>
 
-          {imagePreviews.length > 0 && (
-            <div className="grid grid-cols-3 gap-2 mb-3">
-              {imagePreviews.map((preview, index) => (
-                <div key={index} className="relative">
-                  <img
-                    src={preview}
-                    alt={`Preview ${index + 1}`}
-                    className="w-full h-20 object-cover rounded-md border border-gray-300"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    className="absolute -top-1 -right-1 p-0.5 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-md"
-                    disabled={submitting}
-                  >
-                    <X size={12} />
-                  </button>
-                </div>
-              ))}
+            {/* Submit Buttons */}
+            <div className="flex gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => navigate('/material/intent')}
+                className="flex-1 bg-white border-2 border-gray-200 text-gray-700 font-semibold py-3.5 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold py-3.5 rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-md hover:shadow-lg disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transform hover:scale-[1.02]"
+              >
+                {submitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Creating...
+                  </span>
+                ) : (
+                  'Create Intent'
+                )}
+              </button>
             </div>
-          )}
+          </form>
         </div>
 
-        {/* Spacer for fixed buttons */}
-        <div className="h-4"></div>
-      </form>
-
-          {/* Fixed Action Buttons at Bottom */}
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
-            <div className="max-w-[390px] mx-auto px-4 py-3">
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => navigate('/indent')}
-                  className="flex-1 bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-300 transition-colors"
-                  disabled={submitting}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  className="flex-1 bg-orange-500 text-white font-semibold py-3 rounded-lg hover:bg-orange-600 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
-                >
-                  {submitting ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Creating...
-                    </span>
-                  ) : (
-                    'Create Intent'
-                  )}
-                </button>
-              </div>
-            </div>
+        {/* Footer */}
+        <div className="px-6 pb-6 pt-2">
+          <div className="text-center">
+            <p className="text-xs text-gray-400">
+              Powered by Laxmi Power Tech
+            </p>
           </div>
         </div>
       </div>

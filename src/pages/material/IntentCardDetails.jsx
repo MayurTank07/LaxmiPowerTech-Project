@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit2, Save, X, Trash2, Upload } from 'lucide-react';
+import { FaArrowLeft } from 'react-icons/fa';
 import { purchaseOrderAPI, materialCatalogAPI as materialAPI } from '../../utils/materialAPI';
 import MaterialLineItem from './MaterialLineItem';
 
@@ -294,21 +295,35 @@ export default function IntentCardDetails() {
     )].sort((a, b) => a.localeCompare(b));
   };
 
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-sm">Loading intent details...</p>
+        </div>
       </div>
     );
   }
 
   if (!purchaseOrder) {
     return (
-      <div className="p-4">
-        <p className="text-red-600">Purchase order not found</p>
-        <button onClick={() => navigate('/material/intent')} className="mt-4 text-orange-600">
-          Go Back
-        </button>
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="text-center px-6">
+          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center">
+            <X size={32} className="text-red-500" />
+          </div>
+          <p className="text-gray-900 font-semibold text-lg mb-2">Intent Not Found</p>
+          <p className="text-gray-600 text-sm mb-6">The requested intent could not be found</p>
+          <button 
+            onClick={() => navigate('/material/intent')} 
+            className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-orange-600 hover:to-orange-700 transition-all shadow-md"
+          >
+            Go Back to Intent List
+          </button>
+        </div>
       </div>
     );
   }
@@ -329,23 +344,28 @@ export default function IntentCardDetails() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      {/* Header */}
-      <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="px-4 py-3 flex items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50">
+      {/* Container with consistent mobile width */}
+      <div className="max-w-md mx-auto min-h-screen bg-white shadow-xl">
+        {/* Header with Gradient */}
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 pt-6 pb-8 rounded-b-3xl shadow-lg relative">
           <button
+            className="absolute top-6 left-6 text-white flex items-center gap-2 hover:bg-white/20 px-3 py-1.5 rounded-full transition-all"
             onClick={() => navigate('/material/intent')}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
-            <ArrowLeft size={20} className="text-gray-700" />
+            <FaArrowLeft size={16} />
+            <span className="text-sm font-medium">Back</span>
           </button>
-          <h1 className="text-lg font-semibold text-gray-800">Intent Details</h1>
-          <div className="w-8" /> {/* Spacer for alignment */}
-        </div>
-      </div>
 
-      {/* Content */}
-      <div className="p-4 space-y-4">
+          <div className="text-center pt-8">
+            <h1 className="text-white text-2xl font-bold mb-2">Intent Details</h1>
+            <p className="text-white/80 text-sm">{purchaseOrder.purchaseOrderId}</p>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="px-6 py-6 -mt-4">
+          <div className="space-y-4">
         {/* Basic Info Card */}
         <div className="bg-white rounded-lg border p-4 space-y-3">
           <h2 className="font-semibold text-gray-900">Basic Information</h2>
