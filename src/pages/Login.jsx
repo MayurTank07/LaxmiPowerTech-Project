@@ -38,8 +38,8 @@ const Login = () => {
       localStorage.setItem('loginTime', Date.now());
       console.log('✅ Saved to localStorage');
 
-      console.log('🚀 Navigating to /admindashboard...');
-      navigate('/admindashboard');
+      console.log('🚀 Navigating to /dashboard...');
+      navigate('/dashboard');
     } catch (err) {
       console.error('❌ Login error:', err);
       console.error('❌ Error response:', err?.response);
