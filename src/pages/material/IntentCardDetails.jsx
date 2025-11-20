@@ -85,7 +85,7 @@ export default function IntentCardDetails() {
     } catch (err) {
       // Error fetching PO details
       showToast('Failed to load purchase order details', 'error');
-      navigate('/dashboard/material/intent');
+      navigate('/material/intent');
     } finally {
       setLoading(false);
     }
@@ -117,7 +117,7 @@ export default function IntentCardDetails() {
       localStorage.setItem('intentRefresh', Date.now().toString());
       localStorage.setItem('upcomingDeliveryRefresh', Date.now().toString());
       
-      navigate('/dashboard/material/intent');
+      navigate('/material/intent');
     } catch (err) {
       // Error deleting purchase order
       showToast('Failed to delete purchase order', 'error');
@@ -306,7 +306,7 @@ export default function IntentCardDetails() {
     return (
       <div className="p-4">
         <p className="text-red-600">Purchase order not found</p>
-        <button onClick={() => navigate('/dashboard/material/intent')} className="mt-4 text-orange-600">
+        <button onClick={() => navigate('/material/intent')} className="mt-4 text-orange-600">
           Go Back
         </button>
       </div>
@@ -334,7 +334,7 @@ export default function IntentCardDetails() {
       <div className="bg-white shadow-sm sticky top-0 z-10">
         <div className="px-4 py-3 flex items-center justify-between">
           <button
-            onClick={() => navigate('/dashboard/material/intent')}
+            onClick={() => navigate('/material/intent')}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
             <ArrowLeft size={20} className="text-gray-700" />
@@ -574,7 +574,7 @@ export default function IntentCardDetails() {
           ) : (
             <div className="flex gap-3">
               <button
-                onClick={() => navigate('/indent')}
+                onClick={() => navigate('/material/intent')}
                 className="flex-1 bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-300 transition-colors"
               >
                 Back

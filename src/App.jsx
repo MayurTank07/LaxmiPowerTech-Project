@@ -44,6 +44,7 @@ import SiteTransfers from './pages/material/SiteTransfers';
 import AdminUpcomingDeliveries from './pages/material/AdminUpcomingDeliveries';
 import AdminIntent from './pages/material/AdminIntent';
 import UploadPhoto from './pages/material/UploadPhoto';
+import Intent from './pages/material/Intent';
 
 function App() {
   const user = JSON.parse(localStorage.getItem('user'));
@@ -122,6 +123,14 @@ function App() {
 
         {/* Admin Dashboard Route */}
         <Route path="/admindashboard" element={<AdminDashboard />} />
+
+        {/* Client-Side Material Routes */}
+        <Route path="/material/intent" element={<Intent />} />
+        <Route path="/material/intent/new" element={<IntentForm />} />
+        <Route path="/material/intent/:id" element={<IntentCardDetails />} />
+        <Route path="/material/transfer" element={<Material activeTab="transfer" />} />
+        <Route path="/material/deliveries" element={<UpcomingDeliveries />} />
+        <Route path="/material/grn" element={<Material activeTab="grn" />} />
 
         {/* Material Management Routes - Following existing flat route pattern */}
         <Route path="/dashboard/material/uploadindent" element={<UploadIndent />} />

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, X, Upload, ChevronDown } from 'lucide-react';
 import { purchaseOrderAPI, materialCatalogAPI as materialAPI } from '../../utils/materialAPI';
 import { useNavigate } from 'react-router-dom';
+import axios from '../../utils/axios';
 
 // Searchable Dropdown Component
 function SearchableDropdown({ value, onChange, options, placeholder, disabled }) {
@@ -95,8 +96,13 @@ export default function IntentForm() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  
+  // Get logged-in user from localStorage
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const userName = user?.name || '';
+  
   const [formData, setFormData] = useState({
-    requestedBy: '',
+    requestedBy: userName,
     deliverySite: '',
     materials: [],
     remarks: '',
@@ -122,15 +128,19 @@ export default function IntentForm() {
       try {
         setLoading(true);
         
-        // Hardcoded sites list (sorted alphabetically)
-        const sitesList = [
-          'Site A',
-          'Site B',
-          'Site C',
-          'Site D',
-          'Site E'
-        ].sort((a, b) => a.localeCompare(b));
-        setSites(sitesList);
+        // Fetch sites from backend
+        try {
+          const branchesResponse = await axios.get('/branches');
+          const branches = branchesResponse.data || [];
+          const sitesList = branches.map(branch => branch.name).sort((a, b) => a.localeCompare(b));
+          setSites(sitesList);
+          console.log('✅ Fetched', sitesList.length, 'sites from backend');
+        } catch (err) {
+          console.error('❌ Error fetching sites:', err);
+          // Fallback to hardcoded list if API fails
+          const fallbackSites = ['Neelkanth Mongolia', 'Panorama', 'test'].sort((a, b) => a.localeCompare(b));
+          setSites(fallbackSites);
+        }
         
         // Fetch materials
         const materials = await materialAPI.getAll();
@@ -142,7 +152,7 @@ export default function IntentForm() {
         setCategories(uniqueCategories);
         
       } catch (err) {
-        // Error fetching materials and sites
+        console.error('❌ Error fetching data:', err);
       } finally {
         setLoading(false);
       }
@@ -298,7 +308,7 @@ export default function IntentForm() {
         alert('Intent (PO) created successfully!');
         
         // Redirect to Indent tab
-        navigate('/dashboard/material/intent');
+        navigate('/material/intent');
       }
     } catch (error) {
       // Error creating purchase order
@@ -316,7 +326,7 @@ export default function IntentForm() {
           {/* Header with Back Button */}
           <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-200">
             <button
-              onClick={() => navigate('/indent')}
+              onClick={() => navigate('/material/intent')}
               className="p-0 hover:opacity-70 transition-opacity"
               disabled={submitting}
             >
@@ -337,11 +347,11 @@ export default function IntentForm() {
               <input
                 type="text"
                 value={formData.requestedBy}
-                onChange={(e) => setFormData(prev => ({ ...prev, requestedBy: e.target.value }))}
-                className="w-full bg-white border border-gray-300 rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-gray-400"
+                className="w-full bg-gray-100 border border-gray-300 rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none cursor-not-allowed"
                 placeholder="Enter your name"
                 required
-                disabled={submitting}
+                readOnly
+                disabled
               />
             </div>
 

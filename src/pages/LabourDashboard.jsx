@@ -98,7 +98,7 @@ const LabourDashboard = () => {
               label="Material"
               icon={null}
               iconComponent={<MdInventory className="w-full h-full text-white" />}
-              onClick={() => navigate('/material/indent')}
+              onClick={() => navigate('/material/intent')}
               gradient="from-teal-400 to-teal-500"
               bgColor="bg-teal-50"
             />
