@@ -38,14 +38,22 @@ const Login = () => {
       localStorage.setItem('loginTime', Date.now());
       console.log('✅ Saved to localStorage');
 
-      console.log('🚀 Navigating to /dashboard...');
-      navigate('/dashboard');
+      console.log('🚀 Navigating to /admindashboard...');
+      navigate('/admindashboard');
     } catch (err) {
       console.error('❌ Login error:', err);
       console.error('❌ Error response:', err?.response);
       console.error('❌ Error data:', err?.response?.data);
       
-      const errorMessage = err?.response?.data?.message || err?.message || 'Invalid credentials. Please try again.';
+      let errorMessage;
+      if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+        errorMessage = '❌ Cannot connect to server. Please ensure backend is running on port 5001.';
+      } else if (err.response?.status === 401) {
+        errorMessage = 'Invalid username or password. Please try again.';
+      } else {
+        errorMessage = err?.response?.data?.message || err?.message || 'Login failed. Please try again.';
+      }
+      
       console.error('❌ Final error message:', errorMessage);
       setError(errorMessage);
     } finally {

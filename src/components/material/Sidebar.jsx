@@ -22,7 +22,7 @@ export default function Sidebar({ setActiveSection }) {
               onClick={() => setActiveSection("uploadIndent")}
               className="text-sm hover:text-gray-200 flex items-center gap-2"
             >
-              <FileUp size={16} /> Upload Indent List
+              <FileUp size={16} /> Upload Indent List2
             </button>
             <button
               onClick={() => setActiveSection("siteTransfers")}
