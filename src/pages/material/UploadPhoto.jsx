@@ -13,12 +13,11 @@ export default function UploadPhoto() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [sites, setSites] = useState([]);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  
-  // Site names for project dropdown
-  const sites = ['Site A', 'Site B', 'Site C', 'Site D', 'Site E'].sort();
 
-  // Generate Intent ID on mount
+  // Generate Intent ID and fetch sites on mount
   useEffect(() => {
     const generateIntentId = () => {
       const today = new Date();
@@ -38,6 +37,28 @@ export default function UploadPhoto() {
     };
     
     setIndentId(generateIntentId());
+    
+    // Fetch sites from backend
+    const fetchSites = async () => {
+      try {
+        setLoading(true);
+        const branchesResponse = await axios.get('/branches');
+        const branches = branchesResponse.data || [];
+        const sitesList = branches.map(branch => branch.name).sort((a, b) => a.localeCompare(b));
+        setSites(sitesList);
+        console.log('✅ Fetched', sitesList.length, 'sites from backend');
+      } catch (err) {
+        console.error('❌ Error fetching sites:', err);
+        // Fallback to hardcoded list if API fails
+        const fallbackSites = ['Site A', 'Site B', 'Site C', 'Site D', 'Site E'].sort();
+        setSites(fallbackSites);
+        console.log('⚠️ Using fallback sites list');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchSites();
   }, []);
 
   const handleImageSelect = (e) => {
@@ -161,17 +182,21 @@ export default function UploadPhoto() {
 
           {/* Project Dropdown */}
           <div className="mb-6">
-            <label className="block text-gray-700 font-semibold mb-2">Project <span className="text-red-500">*</span></label>
+            <label className="block text-gray-700 font-semibold mb-2">Site <span className="text-red-500">*</span></label>
             <select
               value={project}
               onChange={(e) => setProject(e.target.value)}
               className="w-full border border-gray-300 rounded-xl px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              disabled={loading || sites.length === 0}
             >
-              <option value="">Select Project</option>
+              <option value="">{loading ? 'Loading sites...' : 'Select Site'}</option>
               {sites.map(site => (
                 <option key={site} value={site}>{site}</option>
               ))}
             </select>
+            {sites.length === 0 && !loading && (
+              <p className="text-xs text-red-500 mt-1">No sites available. Please contact admin.</p>
+            )}
           </div>
 
           {/* Upload Section */}
