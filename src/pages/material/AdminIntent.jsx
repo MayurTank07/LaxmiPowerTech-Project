@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { indentAPI, materialCatalogAPI as materialAPI } from "../../utils/materialAPI";
+import { indentAPI, purchaseOrderAPI, materialCatalogAPI as materialAPI } from "../../utils/materialAPI";
 import { Eye, Trash2, X, Edit2, Save, Plus, Image as ImageIcon } from "lucide-react";
 import MaterialLineItem from "./MaterialLineItem";
 import DashboardLayout from "../../layouts/DashboardLayout";
@@ -93,20 +93,44 @@ export default function AdminIntent() {
     try {
       setLoading(true);
       setError(null);
-      const response = await indentAPI.getAll(currentPage, 20, search);
-      if (response.success) {
-        const sortedData = (response.data || []).sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-        );
-        console.log(`📊 Admin: Fetched ${sortedData.length} indents`);
-        setIndents(sortedData);
-        setTotalPages(response.pagination?.totalPages || 1);
-      } else {
-        setError('Failed to fetch indents');
-      }
+      
+      // Fetch both Indents (photo-based) and PurchaseOrders (manual form)
+      const [indentResponse, poResponse] = await Promise.all([
+        indentAPI.getAll(currentPage, 20, search).catch(() => ({ success: false, data: [] })),
+        purchaseOrderAPI.getAll(currentPage, 20, search).catch(() => ({ success: false, data: [] }))
+      ]);
+      
+      // Merge both data sources
+      const indentsData = indentResponse.success ? (indentResponse.data || []).map(item => ({
+        ...item,
+        type: 'indent', // Mark as indent type
+        purchaseOrderId: item.indentId // Use indentId as PO-ID
+      })) : [];
+      
+      const posData = poResponse.success ? (poResponse.data || []).map(item => ({
+        ...item,
+        type: 'purchaseOrder', // Mark as PO type
+        purchaseOrderId: item.purchaseOrderId,
+        indentId: item.purchaseOrderId // Alias for consistency
+      })) : [];
+      
+      // Combine and sort by date
+      const combinedData = [...indentsData, ...posData].sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      
+      console.log(`📊 Admin: Fetched ${indentsData.length} indents + ${posData.length} POs = ${combinedData.length} total`);
+      setIndents(combinedData);
+      
+      // Use max total pages from both sources
+      const maxPages = Math.max(
+        indentResponse.pagination?.totalPages || 1,
+        poResponse.pagination?.totalPages || 1
+      );
+      setTotalPages(maxPages);
     } catch (err) {
-      console.error('❌ Admin: Error fetching indents:', err);
-      setError(err.response?.data?.message || 'Failed to load indents. Please try again.');
+      console.error('❌ Admin: Error fetching data:', err);
+      setError(err.response?.data?.message || 'Failed to load data. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -130,18 +154,22 @@ export default function AdminIntent() {
     }
   };
 
-  const handleDelete = async (id, indentId) => {
-    if (!window.confirm(`Are you sure you want to delete Intent ${indentId}?`)) {
+  const handleDelete = async (id, indentId, type) => {
+    if (!window.confirm(`Are you sure you want to delete ${type === 'purchaseOrder' ? 'Purchase Order' : 'Intent'} ${indentId}?`)) {
       return;
     }
 
     try {
       setDeleting(true);
-      const response = await indentAPI.delete(id);
+      
+      // Use appropriate API based on type
+      const response = type === 'purchaseOrder' 
+        ? await purchaseOrderAPI.delete(id)
+        : await indentAPI.delete(id);
       
       if (response.success) {
         // Update state immediately without full refresh
-        setIndents(prev => prev.filter(indent => indent._id !== id));
+        setIndents(prev => prev.filter(item => item._id !== id));
         
         // Close modal if it's open
         if (selectedIndent?._id === id) {
@@ -153,10 +181,10 @@ export default function AdminIntent() {
         window.dispatchEvent(new Event('intentCreated'));
         localStorage.setItem('intentRefresh', Date.now().toString());
         
-        showToast('Intent deleted successfully', 'success');
+        showToast(`${type === 'purchaseOrder' ? 'Purchase Order' : 'Intent'} deleted successfully`, 'success');
       }
     } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to delete intent', 'error');
+      showToast(err.response?.data?.message || 'Failed to delete', 'error');
     } finally {
       setDeleting(false);
     }
@@ -170,11 +198,30 @@ export default function AdminIntent() {
   };
 
   const handleEdit = () => {
-    // For indents, we only allow status editing
-    setFormData({
-      status: selectedIndent.status,
-      adminRemarks: selectedIndent.adminRemarks || ''
-    });
+    if (selectedIndent.type === 'purchaseOrder') {
+      // For PurchaseOrders, allow full editing
+      setFormData({
+        status: selectedIndent.status,
+        remarks: selectedIndent.remarks || '',
+        requestedBy: selectedIndent.requestedBy,
+        deliverySite: selectedIndent.deliverySite,
+        materials: (selectedIndent.materials || []).map((m, idx) => ({
+          id: m._id || Date.now() + idx,
+          category: m.category || '',
+          subCategory: m.subCategory || '',
+          subCategory1: m.subCategory1 || '',
+          quantity: m.quantity || '',
+          uom: m.uom || 'Nos',
+          remarks: m.remarks || ''
+        }))
+      });
+    } else {
+      // For Indents, only allow status and admin remarks editing
+      setFormData({
+        status: selectedIndent.status,
+        adminRemarks: selectedIndent.adminRemarks || ''
+      });
+    }
     setEditing(true);
   };
 
@@ -187,35 +234,48 @@ export default function AdminIntent() {
     try {
       setSaving(true);
       
-      // Prepare materials data
-      const materialsData = formData.materials.map(m => ({
-        itemName: `${m.category}${m.subCategory ? ' - ' + m.subCategory : ''}${m.subCategory1 ? ' - ' + m.subCategory1 : ''}`,
-        category: m.category,
-        subCategory: m.subCategory || '',
-        subCategory1: m.subCategory1 || '',
-        quantity: parseInt(m.quantity),
-        uom: m.uom || 'Nos',
-        remarks: m.remarks || ''
-      }));
+      let response;
       
-      const updateData = {
-        status: formData.status,
-        remarks: formData.remarks,
-        requestedBy: formData.requestedBy,
-        deliverySite: formData.deliverySite,
-        materials: materialsData
-      };
-      
-      const response = await indentAPI.updateStatus(selectedIndent._id, formData.status, formData.adminRemarks);
+      // Handle based on type
+      if (selectedIndent.type === 'purchaseOrder') {
+        // For PurchaseOrder: update full data including materials
+        const materialsData = formData.materials?.map(m => ({
+          itemName: `${m.category}${m.subCategory ? ' - ' + m.subCategory : ''}${m.subCategory1 ? ' - ' + m.subCategory1 : ''}`,
+          category: m.category,
+          subCategory: m.subCategory || '',
+          subCategory1: m.subCategory1 || '',
+          quantity: parseInt(m.quantity),
+          uom: m.uom || 'Nos',
+          remarks: m.remarks || ''
+        })) || selectedIndent.materials;
+        
+        const updateData = {
+          status: formData.status,
+          remarks: formData.remarks || formData.adminRemarks,
+          requestedBy: formData.requestedBy || selectedIndent.requestedBy,
+          deliverySite: formData.deliverySite || selectedIndent.deliverySite,
+          materials: materialsData
+        };
+        
+        response = await purchaseOrderAPI.update(selectedIndent._id, updateData);
+      } else {
+        // For Indent: only update status and admin remarks
+        response = await indentAPI.updateStatus(selectedIndent._id, formData.status, formData.adminRemarks);
+      }
       
       if (response.success) {
         // Update the modal data immediately
-        const updatedIndent = { ...selectedIndent, status: formData.status, adminRemarks: formData.adminRemarks };
+        const updatedIndent = { 
+          ...selectedIndent, 
+          status: formData.status, 
+          adminRemarks: formData.adminRemarks || formData.remarks,
+          remarks: formData.remarks
+        };
         setSelectedIndent(updatedIndent);
         
         // Update the list state immediately
         setIndents(prev => 
-          prev.map(indent => indent._id === selectedIndent._id ? updatedIndent : indent)
+          prev.map(item => item._id === selectedIndent._id ? updatedIndent : item)
         );
         
         setEditing(false);
@@ -224,11 +284,11 @@ export default function AdminIntent() {
         window.dispatchEvent(new Event('intentCreated'));
         localStorage.setItem('intentRefresh', Date.now().toString());
         
-        showToast('Intent status updated successfully', 'success');
+        showToast(`${selectedIndent.type === 'purchaseOrder' ? 'Purchase Order' : 'Intent'} updated successfully`, 'success');
       }
     } catch (err) {
-      console.error('Error updating intent:', err);
-      showToast(err.response?.data?.message || 'Failed to update intent', 'error');
+      console.error('Error updating:', err);
+      showToast(err.response?.data?.message || 'Failed to update', 'error');
     } finally {
       setSaving(false);
     }
@@ -433,12 +493,12 @@ export default function AdminIntent() {
                           <button
                             onClick={() => handleViewDetails(indent._id)}
                             className="p-1 hover:bg-green-50 rounded text-green-600"
-                            title="Edit"
+                            title="View Details"
                           >
-                            <Edit2 size={18} />
+                            <Eye size={18} />
                           </button>
                           <button
-                            onClick={() => handleDelete(indent._id, indent.indentId)}
+                            onClick={() => handleDelete(indent._id, indent.indentId || indent.purchaseOrderId, indent.type)}
                             className="p-1 hover:bg-red-50 rounded text-red-600"
                             title="Delete"
                             disabled={deleting}
@@ -520,7 +580,7 @@ export default function AdminIntent() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-600">PO-ID</label>
-                  <p className="text-gray-900 font-medium">{selectedPO.purchaseOrderId}</p>
+                  <p className="text-gray-900 font-medium">{selectedIndent.indentId}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Status</label>
@@ -537,148 +597,85 @@ export default function AdminIntent() {
                     </select>
                   ) : (
                     <p>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(selectedPO.status)}`}>
-                        {selectedPO.status}
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(selectedIndent.status)}`}>
+                        {selectedIndent.status?.charAt(0).toUpperCase() + selectedIndent.status?.slice(1)}
                       </span>
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Delivery Site</label>
-                  {editing ? (
-                    <select
-                      value={formData.deliverySite}
-                      onChange={(e) => setFormData({ ...formData, deliverySite: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg mt-1"
-                    >
-                      <option value="">Select Site</option>
-                      {sites.map(site => (
-                        <option key={site} value={site}>{site}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <p className="text-gray-900">{selectedPO.deliverySite}</p>
-                  )}
+                  <label className="text-sm font-medium text-gray-600">Project</label>
+                  <p className="text-gray-900">{selectedIndent.project || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Branch</label>
+                  <p className="text-gray-900">{selectedIndent.branch || 'N/A'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Requested By</label>
-                  {editing ? (
-                    <input
-                      type="text"
-                      value={formData.requestedBy}
-                      onChange={(e) => setFormData({ ...formData, requestedBy: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg mt-1"
-                    />
-                  ) : (
-                    <p className="text-gray-900">{selectedPO.requestedBy}</p>
-                  )}
+                  <p className="text-gray-900">{selectedIndent.requestedBy?.name || 'N/A'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Request Date</label>
-                  <p className="text-gray-900">{formatDate(selectedPO.requestDate)}</p>
+                  <p className="text-gray-900">{formatDate(selectedIndent.createdAt)}</p>
                 </div>
               </div>
 
-              {/* Remarks */}
+              {/* Admin Remarks */}
               <div>
-                <label className="text-sm font-medium text-gray-600">Remarks</label>
+                <label className="text-sm font-medium text-gray-600">Admin Remarks</label>
                 {editing ? (
                   <textarea
-                    value={formData.remarks}
-                    onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
+                    value={formData.adminRemarks}
+                    onChange={(e) => setFormData({ ...formData, adminRemarks: e.target.value })}
                     className="w-full px-3 py-2 border rounded-lg mt-1"
                     rows="3"
-                    placeholder="Add remarks..."
+                    placeholder="Add admin remarks..."
                   />
                 ) : (
-                  <p className="text-gray-900 mt-1">{selectedPO.remarks || '-'}</p>
+                  <p className="text-gray-900 mt-1">{selectedIndent.adminRemarks || '-'}</p>
                 )}
               </div>
 
-              {/* Materials */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <label className="text-sm font-medium text-gray-600">Materials</label>
-                  {editing && (
-                    <button
-                      onClick={addMaterialRow}
-                      className="flex items-center gap-1 px-3 py-1 text-sm text-orange-600 hover:text-orange-700 font-medium"
-                    >
-                      <Plus size={16} />
-                      Add Material
-                    </button>
-                  )}
-                </div>
-                
-                {editing ? (
-                  <div className="space-y-2">
-                    {formData.materials && formData.materials.length > 0 ? (
-                      formData.materials.map((material, idx) => (
-                        <MaterialLineItem
-                          key={material.id}
-                          material={material}
-                          index={idx}
-                          isEditing={editingMaterialId === material.id}
-                          onEdit={() => setEditingMaterialId(material.id)}
-                          onDoneEditing={() => setEditingMaterialId(null)}
-                          onRemove={() => removeMaterialRow(material.id)}
-                          onUpdate={(fieldName, value) => {
-                            if (fieldName === 'category') {
-                              updateMaterial(material.id, { category: value, subCategory: '', subCategory1: '' });
-                            } else if (fieldName === 'subCategory') {
-                              updateMaterial(material.id, { subCategory: value, subCategory1: '' });
-                            } else {
-                              updateMaterial(material.id, { [fieldName]: value });
-                            }
-                          }}
-                          categories={categories}
-                          getSubcategories={getSubcategories}
-                          getSubSubcategories={getSubSubcategories}
-                        />
-                      ))
-                    ) : (
-                      <p className="text-sm text-gray-500 text-center py-4">No materials added</p>
-                    )}
+              {/* Image */}
+              {selectedIndent.imageUrl && (
+                <div>
+                  <label className="text-sm font-medium text-gray-600 mb-2 block">Uploaded Image</label>
+                  <div className="border rounded-lg overflow-hidden inline-block">
+                    <img
+                      src={`${axios.defaults.baseURL}${selectedIndent.imageUrl}`}
+                      alt="Intent"
+                      className="max-w-full h-auto max-h-96 object-contain"
+                      onClick={() => handleViewImage(selectedIndent.imageUrl)}
+                      style={{ cursor: 'pointer' }}
+                    />
                   </div>
-                ) : (
+                </div>
+              )}
+
+              {/* Items (if any) */}
+              {selectedIndent.items && selectedIndent.items.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium text-gray-600 mb-2 block">Items</label>
                   <div className="border rounded-lg overflow-hidden">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Item</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Item Name</th>
                           <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Quantity</th>
                           <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">UOM</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Remarks</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {selectedPO.materials.map((material, index) => (
+                        {selectedIndent.items.map((item, index) => (
                           <tr key={index}>
-                            <td className="px-4 py-2 text-sm text-gray-900">{material.itemName}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900">{material.quantity}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900">{material.uom || 'Nos'}</td>
-                            <td className="px-4 py-2 text-sm text-gray-500">{material.remarks || '-'}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900">{item.itemName || 'N/A'}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900">{item.quantity || 0}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900">{item.uom || 'Nos'}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                  </div>
-                )}
-              </div>
-
-              {/* Attachments */}
-              {selectedPO.attachments && selectedPO.attachments.length > 0 && (
-                <div>
-                  <label className="text-sm font-medium text-gray-600 mb-2 block">Attachments</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {selectedPO.attachments.map((attachment, index) => (
-                      <img
-                        key={index}
-                        src={`http://localhost:5002${attachment}`}
-                        alt={`Attachment ${index + 1}`}
-                        className="w-full h-32 object-cover rounded border"
-                      />
-                    ))}
                   </div>
                 </div>
               )}
