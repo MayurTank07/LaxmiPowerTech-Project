@@ -4,6 +4,7 @@ import { FaArrowLeft } from "react-icons/fa";
 import Intent from "./Intent";
 import MaterialTransfer from "./MaterialTransfer";
 import UpcomingDeliveries from "./UpcomingDeliveries";
+import GRN from "./GRN";
 
 export default function Material({ activeTab }) {
   const navigate = useNavigate();
@@ -38,11 +39,7 @@ export default function Material({ activeTab }) {
       case 'deliveries':
         return <UpcomingDeliveries isTabView={true} />;
       case 'grn':
-        return (
-          <div className="px-6 py-12 text-center">
-            <p className="text-gray-600 text-sm">GRN Page - Coming Soon</p>
-          </div>
-        );
+          return <GRN isTabView={true} />;
       default:
         return <Intent isTabView={true} />;
     }

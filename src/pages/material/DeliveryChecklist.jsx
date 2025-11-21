@@ -124,7 +124,7 @@ export default function DeliveryChecklist() {
         try {
             setSubmitting(true);
             const itemUpdates = items.map(item => ({
-                itemId: item._id,
+                itemId: item.itemId,
                 received_quantity: item.received_quantity,
                 is_received: item.is_received
             }));
@@ -262,7 +262,7 @@ export default function DeliveryChecklist() {
             {/* Items List */}
             <div className="p-4 space-y-3">
                 {items.map((item, index) => (
-                    <div key={item._id} className="bg-white rounded-lg border p-3">
+                    <div key={item.itemId || item._id} className="bg-white rounded-lg border p-3">
                         <div className="space-y-2">
                             {/* Item Info */}
                             <div className="flex items-start justify-between">
