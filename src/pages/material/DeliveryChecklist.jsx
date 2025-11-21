@@ -352,35 +352,36 @@ export default function DeliveryChecklist() {
                     >
                         {submitting ? "Submitting..." : "Submit Changes"}
                     </button>
-                </div>
-            </div>
-
-            {/* Confirmation Modal */}
-            {showConfirmModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Mark as Fully Received?</h3>
-                        <p className="text-sm text-gray-600 mb-6">
-                            The received quantity is less than the ST quantity. Do you want to automatically set 
-                            received quantity equal to ST quantity?
-                        </p>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={handleCancelAutoFill}
-                                className="flex-1 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-                            >
-                                No, Keep Current
-                            </button>
-                            <button
-                                onClick={handleConfirmAutoFill}
-                                className="flex-1 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
-                            >
-                                Yes, Auto-fill
-                            </button>
-                        </div>
                     </div>
                 </div>
-            )}
+
+                {/* Confirmation Modal */}
+                {showConfirmModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">Mark as Fully Received?</h3>
+                            <p className="text-sm text-gray-600 mb-6">
+                                The received quantity is less than the ST quantity. Do you want to automatically set 
+                                received quantity equal to ST quantity?
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={handleCancelAutoFill}
+                                    className="flex-1 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                                >
+                                    No, Keep Current
+                                </button>
+                                <button
+                                    onClick={handleConfirmAutoFill}
+                                    className="flex-1 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
+                                >
+                                    Yes, Auto-fill
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
