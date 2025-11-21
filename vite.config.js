@@ -11,7 +11,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    minify: 'terser',
+    minify: 'esbuild', // Use esbuild (built into Vite, faster than terser)
     chunkSizeWarningLimit: 2000, // Increase limit to 2MB
     rollupOptions: {
       output: {
@@ -35,12 +35,9 @@ export default defineConfig({
         entryFileNames: 'assets/js/[name]-[hash].js',
       },
     },
-    terserOptions: {
-      compress: {
-        drop_console: true, // Remove console.logs in production
-        drop_debugger: true,
-      },
-    },
+    // esbuild minification options
+    target: 'es2015',
+    cssMinify: true,
   },
   // Optimize asset handling
   assetsInlineLimit: 4096, // Only inline assets < 4KB
