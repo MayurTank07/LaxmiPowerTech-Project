@@ -56,8 +56,8 @@ export default function MaterialTransferForm({ onClose, onSuccess }) {
           console.log('⚠️ MaterialTransferForm: Using fallback sites');
         }
         
-        // ✅ FETCH MATERIALS - DUAL FORMAT SUPPORT
-        const materials = await materialAPI.getAll();
+        // ✅ FETCH MATERIALS - MATCHES DEMONSTRATED PROJECT
+        const materials = await materialAPI.getMaterials();
         console.log('✅ MaterialTransferForm: Fetched', materials?.length || 0, 'materials');
         setAllMaterials(materials || []);
         

@@ -145,22 +145,27 @@ export default function IntentForm() {
           setSites(fallbackSites);
         }
         
-        // Fetch materials from database using getAll() - ORIGINAL WORKING METHOD
-        const materials = await materialAPI.getAll();
+        // Fetch materials from database - MATCHES DEMONSTRATED PROJECT
+        // Demonstrated project calls /materials/materials, we call /material/catalog/materials
+        const materials = await materialAPI.getMaterials();
         console.log('✅ Fetched materials:', materials?.length || 0);
+        
+        // Debug: Log first material to verify data structure
+        if (materials && materials.length > 0) {
+          console.log('📊 Sample material data:', {
+            category: materials[0].category,
+            subCategory: materials[0].subCategory,
+            subCategory1: materials[0].subCategory1
+          });
+        }
+        
         setAllMaterials(materials || []);
         
-        // Extract unique categories - READ FROM RAW OBJECT
-        const uniqueCategories = [...new Set(materials.map(item => {
-          // Try raw object first, then fallback to main fields
-          if (item.raw && item.raw['Category']) {
-            return item.raw['Category'];
-          }
-          return item.Category || item.category;
-        }).filter(Boolean))]
+        // Extract unique categories - backend returns formatted data
+        const uniqueCategories = [...new Set(materials.map(item => item.category).filter(Boolean))]
           .sort((a, b) => a.localeCompare(b));
         setCategories(uniqueCategories);
-        console.log('✅ Unique categories:', uniqueCategories.length);
+        console.log('✅ Unique categories:', uniqueCategories.length, uniqueCategories.slice(0, 3));
         
       } catch (err) {
         console.error('❌ Error fetching data:', err);
@@ -171,45 +176,31 @@ export default function IntentForm() {
     fetchData();
   }, []);
 
-  // Get subcategories based on selected category - READ FROM RAW OBJECT
+  // Get subcategories based on selected category - MATCHES DEMONSTRATED PROJECT
   const getSubcategories = (category) => {
-    return [...new Set(
-      allMaterials
-        .filter(item => {
-          // Try raw object first, then fallback to main fields
-          if (item.raw && item.raw['Category']) {
-            return item.raw['Category'] === category;
-          }
-          return (item.Category || item.category) === category;
-        })
-        .map(item => {
-          // Try raw object first, then fallback to main fields
-          if (item.raw && item.raw['Sub category']) {
-            return item.raw['Sub category'];
-          }
-          return item['Sub category'] || item.subCategory;
-        })
+    const filtered = allMaterials.filter(item => item.category === category);
+    const subcategories = [...new Set(
+      filtered
+        .map(item => item.subCategory)
         .filter(Boolean)
     )].sort((a, b) => a.localeCompare(b));
+    
+    console.log(`🔍 getSubcategories for "${category}":`, {
+      totalMaterials: allMaterials.length,
+      matchingCategory: filtered.length,
+      uniqueSubcategories: subcategories.length,
+      subcategories: subcategories.slice(0, 3)
+    });
+    
+    return subcategories;
   };
 
-  // Get sub-subcategories - READ FROM RAW OBJECT
+  // Get sub-subcategories - MATCHES DEMONSTRATED PROJECT
   const getSubSubcategories = (category, subCategory) => {
     return [...new Set(
       allMaterials
-        .filter(item => {
-          // Try raw object first, then fallback to main fields
-          const itemCategory = item.raw && item.raw['Category'] ? item.raw['Category'] : (item.Category || item.category);
-          const itemSubCategory = item.raw && item.raw['Sub category'] ? item.raw['Sub category'] : (item['Sub category'] || item.subCategory);
-          return itemCategory === category && itemSubCategory === subCategory;
-        })
-        .map(item => {
-          // Try raw object first, then fallback to main fields
-          if (item.raw && item.raw['Sub category 1']) {
-            return item.raw['Sub category 1'];
-          }
-          return item['Sub category 1'] || item.subCategory1;
-        })
+        .filter(item => item.category === category && item.subCategory === subCategory)
+        .map(item => item.subCategory1)
         .filter(Boolean)
     )].sort((a, b) => a.localeCompare(b));
   };

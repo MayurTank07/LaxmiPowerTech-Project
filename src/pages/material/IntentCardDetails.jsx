@@ -43,8 +43,8 @@ export default function IntentCardDetails() {
       ].sort((a, b) => a.localeCompare(b));
       setSites(sitesList);
       
-      // Fetch materials
-      const materials = await materialAPI.getAll();
+      // Fetch materials - MATCHES DEMONSTRATED PROJECT
+      const materials = await materialAPI.getMaterials();
       setAllMaterials(materials || []);
       
       // Extract unique categories and sort alphabetically - READ FROM RAW OBJECT
