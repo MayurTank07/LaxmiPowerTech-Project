@@ -3,29 +3,19 @@ import { useState } from "react";
 export default function IndentTable({ data }) {
   const [search, setSearch] = useState("");
 
-  // Define columns to display
-  const displayColumns = ['srNo', 'category', 'subCategory', 'subCategory1', 'sheetName'];
-  const columnLabels = {
-    srNo: 'SR NO.',
-    category: 'Category',
-    subCategory: 'Sub Category',
-    subCategory1: 'Sub Category 1',
-    sheetName: 'Sheet Name'
-  };
-
-  // Filter data based on search
+  // Filter and sort data based on search
   const filteredData = data
-    .filter((row) => {
-      const searchLower = search.toLowerCase();
-      return displayColumns.some(col => 
-        String(row[col] || '').toLowerCase().includes(searchLower)
-      );
-    })
+    .filter((row) =>
+      Object.values(row).some((value) =>
+        String(value).toLowerCase().includes(search.toLowerCase())
+      )
+    )
     .sort((a, b) => {
-      // Sort by srNo or rowIndex
-      const aValue = a.srNo || a.rowIndex || 0;
-      const bValue = b.srNo || b.rowIndex || 0;
-      return String(aValue).localeCompare(String(bValue));
+      // Sort alphabetically by first column
+      const firstKey = Object.keys(data[0])[0];
+      const aValue = String(a[firstKey] || '').toLowerCase();
+      const bValue = String(b[firstKey] || '').toLowerCase();
+      return aValue.localeCompare(bValue);
     });
 
   if (!data || data.length === 0)
@@ -34,10 +24,7 @@ export default function IndentTable({ data }) {
   return (
     <div className="bg-white shadow rounded-lg p-4 overflow-x-auto">
       <div className="flex justify-between items-center mb-4">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-700">Material Catalog</h2>
-          <p className="text-sm text-gray-500">{data.length} materials in database</p>
-        </div>
+        <h2 className="text-lg font-semibold text-gray-700">Indent Table</h2>
         <input
           type="text"
           placeholder="Search..."
@@ -50,9 +37,9 @@ export default function IndentTable({ data }) {
       <table className="min-w-full border text-sm">
         <thead className="bg-orange-100">
           <tr>
-            {displayColumns.map((col) => (
+            {Object.keys(data[0]).map((col) => (
               <th key={col} className="border px-4 py-2 text-left font-medium text-gray-700">
-                {columnLabels[col]}
+                {col}
               </th>
             ))}
           </tr>
@@ -60,9 +47,13 @@ export default function IndentTable({ data }) {
 
         <tbody>
           {filteredData.map((row, idx) => (
-            <tr key={row._id || idx} className="hover:bg-gray-50">
-              {displayColumns.map((col) => {
+            <tr key={idx} className="hover:bg-gray-50">
+              {Object.keys(row).map((col) => {
                 const value = row[col];
+
+               
+
+                // Normal text cell
                 return (
                   <td key={col} className="border px-4 py-2 text-black">
                     {String(value || "-")}
