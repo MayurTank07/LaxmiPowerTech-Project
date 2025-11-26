@@ -252,14 +252,20 @@ export default function MaterialTransferForm({ onClose, onSuccess }) {
           'success'
         );
         
-        // Emit custom event for auto-refresh in admin panel (same tab)
+        // ✅ Emit custom event for auto-refresh in admin panel (same tab)
         const event = new CustomEvent('siteTransferCreated', {
           detail: response.data
         });
         window.dispatchEvent(event);
         
+        // ✅ CRITICAL: Also trigger Upcoming Deliveries refresh
+        window.dispatchEvent(new Event('upcomingDeliveryRefresh'));
+        
         // Trigger localStorage event for cross-tab communication
         localStorage.setItem('siteTransferRefresh', Date.now().toString());
+        localStorage.setItem('upcomingDeliveryRefresh', Date.now().toString());
+        
+        console.log('✅ Site Transfer created - syncing to Upcoming Deliveries');
         
         // Call success callback
         if (onSuccess) {
