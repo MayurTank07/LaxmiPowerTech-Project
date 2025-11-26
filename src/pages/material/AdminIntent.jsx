@@ -218,6 +218,40 @@ export default function AdminIntent() {
     }
   };
 
+  const handleDeleteAttachment = async (attachmentIndex) => {
+    if (!window.confirm('Are you sure you want to delete this attachment? The file will be permanently removed from the server.')) {
+      return;
+    }
+
+    try {
+      setDeletingAttachment(attachmentIndex);
+      const isPurchaseOrder = selectedIndent.type === 'purchaseOrder' || selectedIndent.purchaseOrderId;
+      
+      const response = isPurchaseOrder
+        ? await purchaseOrderAPI.deleteAttachment(selectedIndent._id, attachmentIndex)
+        : await indentAPI.deleteAttachment(selectedIndent._id, attachmentIndex);
+      
+      if (response.success) {
+        // Update the selected indent with the new data
+        setSelectedIndent(response.data);
+        
+        // Also update the indent in the main list
+        setIndents(prevIndents => 
+          prevIndents.map(i => 
+            i._id === selectedIndent._id ? response.data : i
+          )
+        );
+        
+        showToast('Attachment deleted successfully', 'success');
+      }
+    } catch (err) {
+      console.error('Error deleting attachment:', err);
+      showToast(err.response?.data?.message || 'Failed to delete attachment', 'error');
+    } finally {
+      setDeletingAttachment(null);
+    }
+  };
+
   const closeModal = () => {
     setShowDetailsModal(false);
     setSelectedIndent(null);
@@ -581,21 +615,14 @@ export default function AdminIntent() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleViewDetails(indent._id)}
-                            className="p-1 hover:bg-blue-50 rounded text-blue-600"
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
                             title="View Details"
                           >
                             <Eye size={18} />
                           </button>
                           <button
-                            onClick={() => handleViewDetails(indent._id)}
-                            className="p-1 hover:bg-green-50 rounded text-green-600"
-                            title="Edit"
-                          >
-                            <Edit2 size={18} />
-                          </button>
-                          <button
                             onClick={() => handleDelete(indent._id, indent.indentId || indent.purchaseOrderId, indent.type)}
-                            className="p-1 hover:bg-red-50 rounded text-red-600"
+                            className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
                             title="Delete"
                             disabled={deleting}
                           >
@@ -671,99 +698,85 @@ export default function AdminIntent() {
               </button>
             </div>
 
-            <div className="p-6 space-y-6">
-              {/* Basic Info */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-600">PO-ID</label>
-                  <p className="text-gray-900 font-medium">{selectedIndent.purchaseOrderId || selectedIndent.indentId}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Status</label>
-                  {editing ? (
-                    <select
-                      value={formData.status}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg mt-1 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 text-gray-900"
-                      style={{ color: '#111827' }}
-                    >
-                      <option value="pending" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Pending</option>
-                      <option value="approved" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Approved</option>
-                      <option value="transferred" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Transferred</option>
-                      <option value="cancelled" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Cancelled</option>
-                    </select>
-                  ) : (
-                    <p>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(selectedIndent.status)}`}>
-                        {selectedIndent.status?.charAt(0).toUpperCase() + selectedIndent.status?.slice(1)}
-                      </span>
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Delivery Site</label>
-                  {editing ? (
-                    <select
-                      value={formData.deliverySite}
-                      onChange={(e) => setFormData({ ...formData, deliverySite: e.target.value })}
-                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg mt-1 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 text-gray-900"
-                      style={{ color: '#111827' }}
-                    >
-                      <option value="" style={{ color: '#6B7280' }}>Select Site</option>
-                      {sites.map(site => (
-                        <option key={site} value={site} style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>{site}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <p className="text-gray-900">{selectedIndent.deliverySite || 'N/A'}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Requested By</label>
-                  {editing ? (
-                    <input
-                      type="text"
-                      value={formData.requestedBy}
-                      onChange={(e) => setFormData({ ...formData, requestedBy: e.target.value })}
-                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg mt-1 focus:outline-none focus:border-gray-400"
-                    />
-                  ) : (
-                    <p className="text-gray-900">{selectedIndent.requestedBy || 'N/A'}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Request Date</label>
-                  <p className="text-gray-900">{formatDate(selectedIndent.requestDate || selectedIndent.createdAt)}</p>
+            {/* Modal Content */}
+            <div className="px-6 py-4">
+              {/* Intent PO Information */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-700 mb-3 border-b pb-2">
+                  Intent PO Information
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">PO ID</p>
+                    <p className="font-medium text-gray-900">{selectedIndent.purchaseOrderId || selectedIndent.indentId}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Status</p>
+                    {editing ? (
+                      <select
+                        value={formData.status}
+                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                        className="mt-1 w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-400 bg-white text-gray-900"
+                        style={{ color: '#111827' }}
+                      >
+                        <option value="pending" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Pending</option>
+                        <option value="approved" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Approved</option>
+                        <option value="transferred" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Transferred</option>
+                        <option value="cancelled" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Cancelled</option>
+                      </select>
+                    ) : (
+                      <div className="mt-1">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(selectedIndent.status)}`}>
+                          {selectedIndent.status?.charAt(0).toUpperCase() + selectedIndent.status?.slice(1)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Delivery Site</p>
+                    {editing ? (
+                      <input
+                        type="text"
+                        value={formData.deliverySite}
+                        onChange={(e) => setFormData({ ...formData, deliverySite: e.target.value })}
+                        className="mt-1 w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-400 bg-white text-gray-900"
+                      />
+                    ) : (
+                      <p className="font-medium text-gray-900">{selectedIndent.deliverySite || 'N/A'}</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Requested By</p>
+                    {editing ? (
+                      <input
+                        type="text"
+                        value={formData.requestedBy}
+                        onChange={(e) => setFormData({ ...formData, requestedBy: e.target.value })}
+                        className="mt-1 w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-400 bg-white text-gray-900"
+                      />
+                    ) : (
+                      <p className="font-medium text-gray-900">{selectedIndent.requestedBy || 'N/A'}</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Request Date</p>
+                    <p className="font-medium text-gray-900">{formatDate(selectedIndent.requestDate || selectedIndent.createdAt)}</p>
+                  </div>
                 </div>
               </div>
 
-              {/* Remarks */}
-              <div>
-                <label className="text-sm font-medium text-gray-600">Remarks</label>
-                {editing ? (
-                  <textarea
-                    value={formData.remarks}
-                    onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg mt-1 focus:outline-none focus:border-gray-400"
-                    rows="3"
-                    placeholder="Add remarks..."
-                  />
-                ) : (
-                  <p className="text-gray-900 mt-1">{selectedIndent.remarks || '-'}</p>
-                )}
-              </div>
-
-              {/* Materials */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <label className="text-sm font-medium text-gray-600">Materials</label>
+              {/* Materials List */}
+              <div className="mb-6">
+                <div className="flex justify-between items-center mb-3 border-b pb-2">
+                  <h3 className="text-lg font-semibold text-gray-700">
+                    Materials ({editing ? formData.materials?.length : selectedIndent.materials?.length || 0} items)
+                  </h3>
                   {editing && (
                     <button
                       onClick={addMaterialRow}
-                      className="flex items-center gap-1 px-3 py-1 text-sm text-orange-600 hover:text-orange-700 font-medium"
+                      className="text-sm text-orange-600 hover:text-orange-700 font-medium"
                     >
-                      <Plus size={16} />
-                      Add Material
+                      + Add Material
                     </button>
                   )}
                 </div>
@@ -802,58 +815,129 @@ export default function AdminIntent() {
                     )}
                   </div>
                 ) : (
-                  selectedIndent.materials && selectedIndent.materials.length > 0 && (
-                    <div className="border rounded-lg overflow-hidden">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                  selectedIndent.materials && selectedIndent.materials.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full border text-sm">
+                        <thead className="bg-gray-100">
                           <tr>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Item</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Quantity</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">UOM</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Remarks</th>
+                            <th className="border px-3 py-2 text-left font-medium text-gray-700">#</th>
+                            <th className="border px-3 py-2 text-left font-medium text-gray-700">Item Name</th>
+                            <th className="border px-3 py-2 text-left font-medium text-gray-700">Quantity</th>
+                            <th className="border px-3 py-2 text-left font-medium text-gray-700">UOM</th>
+                            <th className="border px-3 py-2 text-left font-medium text-gray-700">Remarks</th>
                           </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody>
                           {selectedIndent.materials.map((material, index) => (
-                            <tr key={index}>
-                              <td className="px-4 py-2 text-sm text-gray-900">{material.itemName}</td>
-                              <td className="px-4 py-2 text-sm text-gray-900">{material.quantity}</td>
-                              <td className="px-4 py-2 text-sm text-gray-900">{material.uom || 'Nos'}</td>
-                              <td className="px-4 py-2 text-sm text-gray-500">{material.remarks || '-'}</td>
+                            <tr key={index} className="hover:bg-gray-50">
+                              <td className="border px-3 py-2 text-gray-600">{index + 1}</td>
+                              <td className="border px-3 py-2 font-medium">{material.itemName || '-'}</td>
+                              <td className="border px-3 py-2">{material.quantity || '-'}</td>
+                              <td className="border px-3 py-2">{material.uom || '-'}</td>
+                              <td className="border px-3 py-2 text-gray-600">{material.remarks || '-'}</td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
+                  ) : (
+                    <p className="text-gray-500 text-sm">No materials listed</p>
                   )
                 )}
               </div>
 
-              {/* Attachments */}
+              {/* Attachments/Images */}
               {selectedIndent.attachments && selectedIndent.attachments.length > 0 && (
-                <div>
-                  <label className="text-sm font-medium text-gray-600 mb-2 block">Attachments</label>
-                  <div className="grid grid-cols-3 gap-2">
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-700 mb-3 border-b pb-2">
+                    Attachments ({selectedIndent.attachments.length})
+                  </h3>
+                  <div className="grid grid-cols-1 gap-4">
                     {selectedIndent.attachments.map((attachment, index) => {
                       const baseURL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5002';
-                      const imageUrl = attachment.startsWith('http') ? attachment : `${baseURL}${attachment}`;
+                      const fileURL = attachment.startsWith('http') ? attachment : `${baseURL}${attachment}`;
+                      const fileName = attachment.split('/').pop();
+                      const isImage = attachment.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i);
+                      
                       return (
-                        <img
-                          key={index}
-                          src={imageUrl}
-                          alt={`Attachment ${index + 1}`}
-                          className="w-full h-32 object-cover rounded border cursor-pointer hover:opacity-90 transition-opacity"
-                          onClick={() => window.open(imageUrl, '_blank')}
-                          onError={(e) => {
-                            console.error('Image load error:', attachment);
-                            e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23f0f0f0" width="200" height="200"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%23999"%3EImage not found%3C/text%3E%3C/svg%3E';
-                          }}
-                        />
+                        <div key={index} className="border rounded-lg overflow-hidden bg-white">
+                          <div className="flex items-center gap-4 p-4">
+                            {/* Image Thumbnail */}
+                            <div className="flex-shrink-0">
+                              {isImage ? (
+                                <img 
+                                  src={fileURL} 
+                                  alt={fileName}
+                                  className="w-20 h-20 object-cover rounded border"
+                                  onError={(e) => {
+                                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect fill="%23f3f4f6" width="80" height="80"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="30"%3E🖼️%3C/text%3E%3C/svg%3E';
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-20 h-20 flex items-center justify-center bg-gray-100 rounded border">
+                                  <span className="text-3xl">📎</span>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* File Info */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{fileName}</p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {isImage ? 'Image' : 'File'} • Attachment {index + 1}
+                              </p>
+                            </div>
+                            
+                            {/* Action Buttons */}
+                            <div className="flex gap-2 flex-shrink-0">
+                              <a
+                                href={fileURL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
+                              >
+                                View
+                              </a>
+                              <a
+                                href={fileURL}
+                                download={fileName}
+                                className="px-3 py-1.5 text-xs font-medium text-green-600 bg-green-50 rounded hover:bg-green-100 transition-colors"
+                              >
+                                Download
+                              </a>
+                              <button
+                                onClick={() => handleDeleteAttachment(index)}
+                                disabled={deletingAttachment === index}
+                                className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                                title="Delete this attachment"
+                              >
+                                <Trash2 size={12} />
+                                {deletingAttachment === index ? 'Deleting...' : 'Delete'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
                 </div>
               )}
+
+              {/* Timestamps */}
+              <div className="bg-gray-50 rounded p-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-500">Created At</p>
+                    <p className="font-medium text-gray-700">{formatDate(selectedIndent.createdAt)}</p>
+                  </div>
+                  {selectedIndent.updatedAt && (
+                    <div>
+                      <p className="text-gray-500">Last Updated</p>
+                      <p className="font-medium text-gray-700">{formatDate(selectedIndent.updatedAt)}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Modal Footer */}
