@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { upcomingDeliveryAPI, indentAPI } from "../../utils/materialAPI";
+import { upcomingDeliveryAPI, indentAPI, purchaseOrderAPI } from "../../utils/materialAPI";
 import { Eye, Trash2, X, Edit2, Save } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import axios from "../../utils/axios";
@@ -96,16 +96,34 @@ export default function AdminUpcomingDeliveries() {
         setSelectedDelivery(response.data);
         setShowDetailsModal(true);
         
-        // If it's a PO type, try to fetch the related Indent for image
+        // ✅ CRITICAL FIX: If it's a PO type, fetch the related PurchaseOrder or Indent
         if (response.data.type === 'PO') {
           try {
-            // The st_id in UpcomingDelivery is the Indent _id
-            const indentResponse = await indentAPI.getById(response.data.st_id);
-            if (indentResponse) {
-              setRelatedIndent(indentResponse);
+            // st_id can be either a PurchaseOrder ID (PO20251126-xxx) or Indent MongoDB _id
+            const stId = response.data.st_id;
+            
+            // Try PurchaseOrder first (if st_id starts with 'PO')
+            if (stId.startsWith('PO')) {
+              try {
+                const poResponse = await purchaseOrderAPI.getById(stId);
+                if (poResponse.success) {
+                  setRelatedIndent(poResponse.data);
+                  console.log('✅ Fetched related PurchaseOrder:', stId);
+                  return;
+                }
+              } catch (poErr) {
+                console.log('Not a PurchaseOrder, trying Indent...');
+              }
+            }
+            
+            // Try Indent (MongoDB _id)
+            const indentResponse = await indentAPI.getById(stId);
+            if (indentResponse.success) {
+              setRelatedIndent(indentResponse.data);
+              console.log('✅ Fetched related Indent:', stId);
             }
           } catch (indentErr) {
-            console.log('No related indent found or error fetching:', indentErr);
+            console.log('No related PO/Indent found or error fetching:', indentErr);
             setRelatedIndent(null);
           }
         } else {

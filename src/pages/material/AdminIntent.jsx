@@ -142,13 +142,37 @@ export default function AdminIntent() {
 
   const handleViewDetails = async (id) => {
     try {
+      // ✅ CRITICAL FIX: Fetch fresh data from backend instead of using stale state
       const indent = indents.find(i => i._id === id);
-      if (indent) {
-        setSelectedIndent(indent);
+      
+      if (!indent) {
+        setError('Indent not found');
+        return;
+      }
+      
+      // Determine if this is a PurchaseOrder or Indent based on type field
+      const isPurchaseOrder = indent.type === 'purchaseOrder' || indent.purchaseOrderId;
+      
+      // Fetch fresh data from backend
+      const response = isPurchaseOrder 
+        ? await purchaseOrderAPI.getById(id)
+        : await indentAPI.getById(id);
+      
+      if (response.success) {
+        // Use fresh data from backend
+        setSelectedIndent({
+          ...response.data,
+          type: isPurchaseOrder ? 'purchaseOrder' : 'indent'
+        });
         setShowDetailsModal(true);
+        console.log('✅ Loaded fresh Intent PO data from backend');
+      } else {
+        setError('Failed to fetch latest indent details');
       }
     } catch (err) {
+      console.error('Error fetching indent details:', err);
       setError('Failed to fetch indent details');
+      showToast('Failed to load latest indent details', 'error');
     }
   };
 
