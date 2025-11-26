@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { indentAPI, purchaseOrderAPI, materialCatalogAPI as materialAPI } from "../../utils/materialAPI";
+import { indentAPI, purchaseOrderAPI, materialCatalogAPI as materialAPI, branchesAPI } from "../../utils/materialAPI";
 import { Eye, Trash2, X, Edit2, Save, Plus, Image as ImageIcon } from "lucide-react";
 import MaterialLineItem from "./MaterialLineItem";
 import DashboardLayout from "../../layouts/DashboardLayout";
@@ -40,11 +40,15 @@ export default function AdminIntent() {
         .sort((a, b) => a.localeCompare(b));
       setCategories(uniqueCategories);
       
-      // Hardcoded sites list
-      const sitesList = ['Site A', 'Site B', 'Site C', 'Site D', 'Site E'].sort();
+      // Fetch sites/branches from backend - NO HARDCODED VALUES
+      const branches = await branchesAPI.getAll();
+      const sitesList = branches.map(branch => branch.name).sort();
       setSites(sitesList);
+      console.log('✅ Fetched sites from backend:', sitesList);
     } catch (err) {
       console.error('Error fetching materials and sites:', err);
+      // Fallback to empty array if fetch fails
+      setSites([]);
     }
   };
 
@@ -275,11 +279,14 @@ export default function AdminIntent() {
         
         setEditing(false);
         
-        // Notify client side
+        // ✅ SYNC TO UPCOMING DELIVERIES - Notify all components
         window.dispatchEvent(new Event('intentCreated'));
+        window.dispatchEvent(new Event('upcomingDeliveryRefresh'));
         localStorage.setItem('intentRefresh', Date.now().toString());
+        localStorage.setItem('upcomingDeliveryRefresh', Date.now().toString());
+        console.log('✅ Intent PO updated - syncing to Upcoming Deliveries');
         
-        showToast('Intent updated successfully', 'success');
+        showToast('Intent updated successfully and synced to Upcoming Deliveries', 'success');
       }
     } catch (err) {
       console.error('Error updating:', err);
@@ -653,12 +660,13 @@ export default function AdminIntent() {
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg mt-1 focus:outline-none focus:border-gray-400"
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg mt-1 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 text-gray-900"
+                      style={{ color: '#111827' }}
                     >
-                      <option value="pending">Pending</option>
-                      <option value="approved">Approved</option>
-                      <option value="transferred">Transferred</option>
-                      <option value="cancelled">Cancelled</option>
+                      <option value="pending" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Pending</option>
+                      <option value="approved" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Approved</option>
+                      <option value="transferred" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Transferred</option>
+                      <option value="cancelled" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Cancelled</option>
                     </select>
                   ) : (
                     <p>
@@ -674,11 +682,12 @@ export default function AdminIntent() {
                     <select
                       value={formData.deliverySite}
                       onChange={(e) => setFormData({ ...formData, deliverySite: e.target.value })}
-                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg mt-1 focus:outline-none focus:border-gray-400"
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg mt-1 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 text-gray-900"
+                      style={{ color: '#111827' }}
                     >
-                      <option value="">Select Site</option>
+                      <option value="" style={{ color: '#6B7280' }}>Select Site</option>
                       {sites.map(site => (
-                        <option key={site} value={site}>{site}</option>
+                        <option key={site} value={site} style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>{site}</option>
                       ))}
                     </select>
                   ) : (

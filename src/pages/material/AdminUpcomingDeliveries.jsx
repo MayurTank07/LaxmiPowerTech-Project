@@ -201,13 +201,16 @@ export default function AdminUpcomingDeliveries() {
         
         setEditing(false);
         
-        // Trigger sync events for Intent PO (if this delivery is linked to a PO)
+        // ✅ SYNC BACK TO SOURCE - Trigger sync events for Intent PO AND Site Transfer
         window.dispatchEvent(new Event('intentCreated'));
+        window.dispatchEvent(new Event('siteTransferCreated'));
         window.dispatchEvent(new Event('upcomingDeliveryRefresh'));
         localStorage.setItem('intentRefresh', Date.now().toString());
+        localStorage.setItem('siteTransferRefresh', Date.now().toString());
         localStorage.setItem('upcomingDeliveryRefresh', Date.now().toString());
+        console.log('✅ Upcoming Delivery updated - syncing back to Intent PO and Site Transfer');
         
-        showToast("Upcoming delivery updated successfully!", 'success');
+        showToast("Upcoming delivery updated and synced to Intent PO/Site Transfer!", 'success');
       }
     } catch (err) {
       console.error("Error updating delivery:", err);
@@ -494,11 +497,12 @@ export default function AdminUpcomingDeliveries() {
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                      className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm"
+                      className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-orange-400 bg-white text-gray-900"
+                      style={{ color: '#111827' }}
                     >
-                      <option value="Pending">Pending</option>
-                      <option value="Partial">Partial</option>
-                      <option value="Transferred">Transferred</option>
+                      <option value="Pending" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Pending</option>
+                      <option value="Partial" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Partial</option>
+                      <option value="Transferred" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Transferred</option>
                     </select>
                   ) : (
                     <div>{getStatusBadge(selectedDelivery.status)}</div>

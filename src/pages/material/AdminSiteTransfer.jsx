@@ -26,24 +26,32 @@ export default function AdminSiteTransfer() {
     fetchTransfers();
   }, [currentPage]);
 
-  // Auto-refresh when new transfer is created
+  // Auto-refresh when new transfer is created OR when Upcoming Delivery updates
   useEffect(() => {
     const handleNewTransfer = () => {
+      console.log('🔄 Site Transfer refresh triggered');
+      fetchTransfers();
+    };
+
+    const handleUpcomingDeliveryUpdate = () => {
+      console.log('🔄 Site Transfer refresh from Upcoming Delivery update');
       fetchTransfers();
     };
 
     window.addEventListener('siteTransferCreated', handleNewTransfer);
+    window.addEventListener('upcomingDeliveryRefresh', handleUpcomingDeliveryUpdate);
 
     const handleStorageChange = (e) => {
-      if (e.key === 'siteTransferRefresh') {
+      if (e.key === 'siteTransferRefresh' || e.key === 'upcomingDeliveryRefresh') {
         fetchTransfers();
-        localStorage.removeItem('siteTransferRefresh');
+        localStorage.removeItem(e.key);
       }
     };
     window.addEventListener('storage', handleStorageChange);
 
     return () => {
       window.removeEventListener('siteTransferCreated', handleNewTransfer);
+      window.removeEventListener('upcomingDeliveryRefresh', handleUpcomingDeliveryUpdate);
       window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
@@ -146,11 +154,14 @@ export default function AdminSiteTransfer() {
         
         setEditing(false);
         
-        // Notify client side
+        // ✅ SYNC TO UPCOMING DELIVERIES - Notify all components
         window.dispatchEvent(new Event('siteTransferCreated'));
+        window.dispatchEvent(new Event('upcomingDeliveryRefresh'));
         localStorage.setItem('siteTransferRefresh', Date.now().toString());
+        localStorage.setItem('upcomingDeliveryRefresh', Date.now().toString());
+        console.log('✅ Site Transfer updated - syncing to Upcoming Deliveries');
         
-        showToast("Site transfer updated successfully!", 'success');
+        showToast("Site transfer updated successfully and synced to Upcoming Deliveries!", 'success');
       }
     } catch (err) {
       console.error("Error updating transfer:", err);
@@ -530,12 +541,13 @@ export default function AdminSiteTransfer() {
                         <select
                           value={formData.status}
                           onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                          className="mt-1 w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-400"
+                          className="mt-1 w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-400 bg-white text-gray-900"
+                          style={{ color: '#111827' }}
                         >
-                          <option value="pending">Pending</option>
-                          <option value="approved">Approved</option>
-                          <option value="transferred">Transferred</option>
-                          <option value="cancelled">Cancelled</option>
+                          <option value="pending" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Pending</option>
+                          <option value="approved" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Approved</option>
+                          <option value="transferred" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Transferred</option>
+                          <option value="cancelled" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Cancelled</option>
                         </select>
                       ) : (
                         <div className="mt-1">{getStatusBadge(selectedTransfer.status)}</div>
@@ -548,7 +560,7 @@ export default function AdminSiteTransfer() {
                           type="text"
                           value={formData.fromSite}
                           onChange={(e) => setFormData({ ...formData, fromSite: e.target.value })}
-                          className="mt-1 w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-400"
+                          className="mt-1 w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-400 bg-white text-gray-900"
                         />
                       ) : (
                         <p className="font-medium text-gray-900">{selectedTransfer.fromSite}</p>
@@ -561,7 +573,7 @@ export default function AdminSiteTransfer() {
                           type="text"
                           value={formData.toSite}
                           onChange={(e) => setFormData({ ...formData, toSite: e.target.value })}
-                          className="mt-1 w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-400"
+                          className="mt-1 w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-400 bg-white text-gray-900"
                         />
                       ) : (
                         <p className="font-medium text-gray-900">{selectedTransfer.toSite}</p>
@@ -574,7 +586,7 @@ export default function AdminSiteTransfer() {
                           type="text"
                           value={formData.requestedBy}
                           onChange={(e) => setFormData({ ...formData, requestedBy: e.target.value })}
-                          className="mt-1 w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-400"
+                          className="mt-1 w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-400 bg-white text-gray-900"
                         />
                       ) : (
                         <p className="font-medium text-gray-900">{selectedTransfer.requestedBy}</p>

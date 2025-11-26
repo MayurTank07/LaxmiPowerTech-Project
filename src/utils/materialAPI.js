@@ -195,10 +195,28 @@ export const upcomingDeliveryAPI = {
   }
 };
 
+// Projects API
+export const projectsAPI = {
+  getAll: async () => {
+    const response = await axios.get('/projects');
+    return response.data;
+  }
+};
+
+// Branches API
+export const branchesAPI = {
+  getAll: async () => {
+    const response = await axios.get('/branches');
+    return response.data;
+  }
+};
+
 export default {
   materialCatalog: materialCatalogAPI,
   siteTransfer: siteTransferAPI,
   purchaseOrder: purchaseOrderAPI,
   upcomingDelivery: upcomingDeliveryAPI,
-  indent: indentAPI
+  indent: indentAPI,
+  projects: projectsAPI,
+  branches: branchesAPI
 };
