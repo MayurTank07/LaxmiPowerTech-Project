@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit2, Save, X, Trash2, Upload } from 'lucide-react';
 import { FaArrowLeft } from 'react-icons/fa';
-import { purchaseOrderAPI, indentAPI, materialCatalogAPI as materialAPI } from '../../utils/materialAPI';
+import { purchaseOrderAPI, indentAPI, materialCatalogAPI as materialAPI, branchesAPI } from '../../utils/materialAPI';
 import axios from '../../utils/axios';
 import MaterialLineItem from './MaterialLineItem';
 
@@ -33,15 +33,11 @@ export default function IntentCardDetails() {
 
   const fetchMaterialsAndSites = async () => {
     try {
-      // Hardcoded sites list (sorted alphabetically)
-      const sitesList = [
-        'Site A',
-        'Site B',
-        'Site C',
-        'Site D',
-        'Site E'
-      ].sort((a, b) => a.localeCompare(b));
+      // ✅ Fetch sites/branches from backend - NO HARDCODED VALUES
+      const branches = await branchesAPI.getAll();
+      const sitesList = branches.map(branch => branch.name).sort();
       setSites(sitesList);
+      console.log('✅ Fetched sites from backend:', sitesList);
       
       // Fetch materials - MATCHES DEMONSTRATED PROJECT
       const materials = await materialAPI.getMaterials();
@@ -58,7 +54,8 @@ export default function IntentCardDetails() {
         .sort((a, b) => a.localeCompare(b));
       setCategories(uniqueCategories);
     } catch (err) {
-      // Error fetching materials and sites
+      console.error('Error fetching materials and sites:', err);
+      setSites([]); // Fallback to empty array
     }
   };
 
@@ -69,32 +66,34 @@ export default function IntentCardDetails() {
       // Try fetching as PurchaseOrder first
       try {
         const poResponse = await purchaseOrderAPI.getById(id);
-        if (poResponse.success) {
+        if (poResponse.success && poResponse.data) {
+          console.log('✅ Fetched as PurchaseOrder:', poResponse.data);
           setPurchaseOrder(poResponse.data);
           setItemType('purchaseOrder');
-        // Convert materials to editable format
-        const editableMaterials = response.data.materials.map((m, idx) => {
-          // Parse itemName to extract category, subCategory, subCategory1
-          const parts = m.itemName?.split(' - ') || [];
-          return {
-            id: Date.now() + idx,
-            category: parts[0] || '',
-            subCategory: parts[1] || '',
-            subCategory1: parts[2] || '',
-            quantity: m.quantity || '',
-            itemName: m.itemName,
-            uom: m.uom,
-            remarks: m.remarks
-          };
-        });
-        
-        setFormData({
-          deliverySite: response.data.deliverySite,
-          requestedBy: response.data.requestedBy,
-          status: response.data.status,
-          remarks: response.data.remarks || '',
-          materials: editableMaterials
-        });
+          
+          // Convert materials to editable format
+          const editableMaterials = (poResponse.data.materials || []).map((m, idx) => {
+            // Parse itemName to extract category, subCategory, subCategory1
+            const parts = m.itemName?.split(' - ') || [];
+            return {
+              id: Date.now() + idx,
+              category: parts[0] || '',
+              subCategory: parts[1] || '',
+              subCategory1: parts[2] || '',
+              quantity: m.quantity || '',
+              itemName: m.itemName,
+              uom: m.uom,
+              remarks: m.remarks
+            };
+          });
+          
+          setFormData({
+            deliverySite: poResponse.data.deliverySite,
+            requestedBy: poResponse.data.requestedBy,
+            status: poResponse.data.status,
+            remarks: poResponse.data.remarks || '',
+            materials: editableMaterials
+          });
           setLoading(false);
           return;
         }
@@ -105,21 +104,23 @@ export default function IntentCardDetails() {
       // If not PurchaseOrder, try fetching as Indent
       try {
         const indentResponse = await indentAPI.getById(id);
-        if (indentResponse) {
-          setIndent(indentResponse);
+        if (indentResponse.success && indentResponse.data) {
+          console.log('✅ Fetched as Indent:', indentResponse.data);
+          setIndent(indentResponse.data);
           setItemType('indent');
           setFormData({
-            status: indentResponse.status,
-            adminRemarks: indentResponse.adminRemarks || ''
+            status: indentResponse.data.status,
+            adminRemarks: indentResponse.data.adminRemarks || ''
           });
           setLoading(false);
           return;
         }
       } catch (indentErr) {
-        console.log('Not an Indent either');
+        console.error('Not an Indent either:', indentErr);
       }
       
       // If neither worked, show error
+      console.error('❌ Failed to load Intent PO with id:', id);
       showToast('Failed to load intent details', 'error');
       navigate('/material/intent');
     } catch (err) {
@@ -535,10 +536,13 @@ export default function IntentCardDetails() {
             <h2 className="font-semibold text-gray-900 mb-3">Uploaded Image</h2>
             <div className="border rounded-lg overflow-hidden">
               <img
-                src={`${axios.defaults.baseURL.replace('/api', '')}${indent.imageUrl}`}
+                src={indent.imageUrl.startsWith('http') ? indent.imageUrl : `${axios.defaults.baseURL.replace('/api', '')}${indent.imageUrl}`}
                 alt="Intent"
                 className="w-full h-auto object-contain cursor-pointer hover:opacity-90 transition-opacity"
-                onClick={() => window.open(`${axios.defaults.baseURL.replace('/api', '')}${indent.imageUrl}`, '_blank')}
+                onClick={() => {
+                  const imageUrl = indent.imageUrl.startsWith('http') ? indent.imageUrl : `${axios.defaults.baseURL.replace('/api', '')}${indent.imageUrl}`;
+                  window.open(imageUrl, '_blank');
+                }}
                 onError={(e) => {
                   console.error('Image load error:', indent.imageUrl);
                   e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23f0f0f0" width="200" height="200"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%23999"%3EImage not found%3C/text%3E%3C/svg%3E';
@@ -604,24 +608,33 @@ export default function IntentCardDetails() {
           {/* Existing Attachments */}
           {purchaseOrder.attachments && purchaseOrder.attachments.length > 0 ? (
             <div className="grid grid-cols-3 gap-2 mb-3">
-              {purchaseOrder.attachments.map((attachment, index) => (
-                <div key={index} className="relative group">
-                  <img
-                    src={`http://localhost:5002${attachment}`}
-                    alt={`Attachment ${index + 1}`}
-                    className="w-full h-24 object-cover rounded border"
-                  />
-                  {editing && (
-                    <button
-                      onClick={() => handleDeleteAttachment(index)}
-                      disabled={deletingAttachment === index}
-                      className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X size={14} />
-                    </button>
-                  )}
-                </div>
-              ))}
+              {purchaseOrder.attachments.map((attachment, index) => {
+                // ✅ Use production backend URL, NOT localhost
+                const imageUrl = attachment.startsWith('http') ? attachment : `${axios.defaults.baseURL.replace('/api', '')}${attachment}`;
+                return (
+                  <div key={index} className="relative group">
+                    <img
+                      src={imageUrl}
+                      alt={`Attachment ${index + 1}`}
+                      className="w-full h-24 object-cover rounded border cursor-pointer"
+                      onClick={() => window.open(imageUrl, '_blank')}
+                      onError={(e) => {
+                        console.error('Image load error:', attachment);
+                        e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23f0f0f0" width="200" height="200"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%23999"%3EImage not found%3C/text%3E%3C/svg%3E';
+                      }}
+                    />
+                    {editing && (
+                      <button
+                        onClick={() => handleDeleteAttachment(index)}
+                        disabled={deletingAttachment === index}
+                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <p className="text-sm text-gray-500 mb-3">No attachments</p>
