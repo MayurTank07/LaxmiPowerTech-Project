@@ -335,6 +335,7 @@ export default function AdminIntent() {
           category: '',
           subCategory: '',
           subCategory1: '',
+          subCategory2: '',
           quantity: '',
           uom: 'Nos',
           remarks: ''
@@ -575,7 +576,7 @@ export default function AdminIntent() {
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg mt-1"
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg mt-1 focus:outline-none focus:border-gray-400"
                     >
                       <option value="pending">Pending</option>
                       <option value="approved">Approved</option>
@@ -593,12 +594,16 @@ export default function AdminIntent() {
                 <div>
                   <label className="text-sm font-medium text-gray-600">Delivery Site</label>
                   {editing ? (
-                    <input
-                      type="text"
+                    <select
                       value={formData.deliverySite}
                       onChange={(e) => setFormData({ ...formData, deliverySite: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg mt-1"
-                    />
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg mt-1 focus:outline-none focus:border-gray-400"
+                    >
+                      <option value="">Select Site</option>
+                      {sites.map(site => (
+                        <option key={site} value={site}>{site}</option>
+                      ))}
+                    </select>
                   ) : (
                     <p className="text-gray-900">{selectedIndent.deliverySite || 'N/A'}</p>
                   )}
@@ -610,7 +615,7 @@ export default function AdminIntent() {
                       type="text"
                       value={formData.requestedBy}
                       onChange={(e) => setFormData({ ...formData, requestedBy: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg mt-1"
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg mt-1 focus:outline-none focus:border-gray-400"
                     />
                   ) : (
                     <p className="text-gray-900">{selectedIndent.requestedBy || 'N/A'}</p>
@@ -629,7 +634,7 @@ export default function AdminIntent() {
                   <textarea
                     value={formData.remarks}
                     onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg mt-1"
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg mt-1 focus:outline-none focus:border-gray-400"
                     rows="3"
                     placeholder="Add remarks..."
                   />
@@ -639,33 +644,80 @@ export default function AdminIntent() {
               </div>
 
               {/* Materials */}
-              {selectedIndent.materials && selectedIndent.materials.length > 0 && (
-                <div>
-                  <label className="text-sm font-medium text-gray-600 mb-2 block">Materials</label>
-                  <div className="border rounded-lg overflow-hidden">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Item</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Quantity</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">UOM</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Remarks</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {selectedIndent.materials.map((material, index) => (
-                          <tr key={index}>
-                            <td className="px-4 py-2 text-sm text-gray-900">{material.itemName}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900">{material.quantity}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900">{material.uom || 'Nos'}</td>
-                            <td className="px-4 py-2 text-sm text-gray-500">{material.remarks || '-'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-medium text-gray-600">Materials</label>
+                  {editing && (
+                    <button
+                      onClick={addMaterialRow}
+                      className="flex items-center gap-1 px-3 py-1 text-sm text-orange-600 hover:text-orange-700 font-medium"
+                    >
+                      <Plus size={16} />
+                      Add Material
+                    </button>
+                  )}
                 </div>
-              )}
+                
+                {editing ? (
+                  <div className="space-y-2">
+                    {formData.materials && formData.materials.length > 0 ? (
+                      formData.materials.map((material, idx) => (
+                        <MaterialLineItem
+                          key={material.id}
+                          material={material}
+                          index={idx}
+                          isEditing={editingMaterialId === material.id}
+                          onEdit={() => setEditingMaterialId(material.id)}
+                          onDoneEditing={() => setEditingMaterialId(null)}
+                          onRemove={() => removeMaterialRow(material.id)}
+                          onUpdate={(fieldName, value) => {
+                            if (fieldName === 'category') {
+                              updateMaterial(material.id, { category: value, subCategory: '', subCategory1: '', subCategory2: '' });
+                            } else if (fieldName === 'subCategory') {
+                              updateMaterial(material.id, { subCategory: value, subCategory1: '', subCategory2: '' });
+                            } else if (fieldName === 'subCategory1') {
+                              updateMaterial(material.id, { subCategory1: value, subCategory2: '' });
+                            } else {
+                              updateMaterial(material.id, { [fieldName]: value });
+                            }
+                          }}
+                          categories={categories}
+                          getSubcategories={getSubcategories}
+                          getSubSubcategories={getSubSubcategories}
+                          getSubSubSubcategories={getSubCategory2}
+                        />
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500 text-center py-4">No materials added</p>
+                    )}
+                  </div>
+                ) : (
+                  selectedIndent.materials && selectedIndent.materials.length > 0 && (
+                    <div className="border rounded-lg overflow-hidden">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Item</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Quantity</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">UOM</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Remarks</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {selectedIndent.materials.map((material, index) => (
+                            <tr key={index}>
+                              <td className="px-4 py-2 text-sm text-gray-900">{material.itemName}</td>
+                              <td className="px-4 py-2 text-sm text-gray-900">{material.quantity}</td>
+                              <td className="px-4 py-2 text-sm text-gray-900">{material.uom || 'Nos'}</td>
+                              <td className="px-4 py-2 text-sm text-gray-500">{material.remarks || '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )
+                )}
+              </div>
 
               {/* Attachments */}
               {selectedIndent.attachments && selectedIndent.attachments.length > 0 && (
