@@ -73,17 +73,18 @@ export default function IntentCardDetails() {
           
           // Convert materials to editable format
           const editableMaterials = (poResponse.data.materials || []).map((m, idx) => {
-            // Parse itemName to extract category, subCategory, subCategory1
+            // Parse itemName to extract category, subCategory, subCategory1, subCategory2
             const parts = m.itemName?.split(' - ') || [];
             return {
               id: Date.now() + idx,
-              category: parts[0] || '',
-              subCategory: parts[1] || '',
-              subCategory1: parts[2] || '',
+              category: m.category || parts[0] || '',
+              subCategory: m.subCategory || parts[1] || '',
+              subCategory1: m.subCategory1 || parts[2] || '',
+              subCategory2: m.subCategory2 || parts[3] || '',
               quantity: m.quantity || '',
               itemName: m.itemName,
-              uom: m.uom,
-              remarks: m.remarks
+              uom: m.uom || 'Nos',
+              remarks: m.remarks || ''
             };
           });
           
@@ -192,10 +193,11 @@ export default function IntentCardDetails() {
 
       // Build materials data
       const materialsData = formData.materials.map(m => ({
-        itemName: m.itemName || `${m.category}${m.subCategory ? ' - ' + m.subCategory : ''}${m.subCategory1 ? ' - ' + m.subCategory1 : ''}`,
+        itemName: m.itemName || `${m.category}${m.subCategory ? ' - ' + m.subCategory : ''}${m.subCategory1 ? ' - ' + m.subCategory1 : ''}${m.subCategory2 ? ' - ' + m.subCategory2 : ''}`,
         category: m.category,
         subCategory: m.subCategory,
         subCategory1: m.subCategory1,
+        subCategory2: m.subCategory2,
         quantity: m.quantity,
         uom: m.uom || 'Nos',
         remarks: m.remarks || ''
@@ -283,12 +285,13 @@ export default function IntentCardDetails() {
     setFormData(prev => ({
       ...prev,
       materials: [
-        ...prev.materials,
+        ...(prev.materials || []),
         {
           id: newMaterialId,
           category: '',
           subCategory: '',
           subCategory1: '',
+          subCategory2: '',
           quantity: '',
           uom: 'Nos',
           remarks: ''
@@ -353,6 +356,27 @@ export default function IntentCardDetails() {
             return item.raw['Sub category 1'];
           }
           return item['Sub category 1'] || item.subCategory1;
+        })
+        .filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b));
+  };
+
+  const getSubSubSubcategories = (category, subCategory, subCategory1) => {
+    return [...new Set(
+      allMaterials
+        .filter(item => {
+          // Try raw object first, then fallback to main fields
+          const itemCategory = item.raw && item.raw['Category'] ? item.raw['Category'] : (item.Category || item.category);
+          const itemSubCategory = item.raw && item.raw['Sub category'] ? item.raw['Sub category'] : (item['Sub category'] || item.subCategory);
+          const itemSubCategory1 = item.raw && item.raw['Sub category 1'] ? item.raw['Sub category 1'] : (item['Sub category 1'] || item.subCategory1);
+          return itemCategory === category && itemSubCategory === subCategory && itemSubCategory1 === subCategory1;
+        })
+        .map(item => {
+          // Try raw object first, then fallback to main fields
+          if (item.raw && item.raw['Sub category 2']) {
+            return item.raw['Sub category 2'];
+          }
+          return item['Sub category 2'] || item.subCategory2;
         })
         .filter(Boolean)
     )].sort((a, b) => a.localeCompare(b));
@@ -581,9 +605,11 @@ export default function IntentCardDetails() {
                   onUpdate={(fieldName, value) => {
                     // Handle cascading resets for dependent fields
                     if (fieldName === 'category') {
-                      updateMaterial(material.id, { category: value, subCategory: '', subCategory1: '' });
+                      updateMaterial(material.id, { category: value, subCategory: '', subCategory1: '', subCategory2: '' });
                     } else if (fieldName === 'subCategory') {
-                      updateMaterial(material.id, { subCategory: value, subCategory1: '' });
+                      updateMaterial(material.id, { subCategory: value, subCategory1: '', subCategory2: '' });
+                    } else if (fieldName === 'subCategory1') {
+                      updateMaterial(material.id, { subCategory1: value, subCategory2: '' });
                     } else {
                       updateMaterial(material.id, { [fieldName]: value });
                     }
@@ -591,6 +617,7 @@ export default function IntentCardDetails() {
                   categories={categories}
                   getSubcategories={getSubcategories}
                   getSubSubcategories={getSubSubcategories}
+                  getSubSubSubcategories={getSubSubSubcategories}
                 />
               ))
             ) : (
