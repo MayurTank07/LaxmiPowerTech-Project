@@ -62,6 +62,11 @@ export const siteTransferAPI = {
   deleteAttachment: async (id, attachmentIndex) => {
     const response = await axios.delete(`/material/site-transfers/${id}/attachments/${attachmentIndex}`);
     return response.data;
+  },
+
+  deleteAll: async () => {
+    const response = await axios.delete('/material/site-transfers/all');
+    return response.data;
   }
 };
 
@@ -100,6 +105,11 @@ export const purchaseOrderAPI = {
   deleteAttachment: async (id, attachmentIndex) => {
     const response = await axios.delete(`/material/purchase-orders/${id}/attachments/${attachmentIndex}`);
     return response.data;
+  },
+
+  deleteAll: async () => {
+    const response = await axios.delete('/material/purchase-orders/all');
+    return response.data;
   }
 };
 
@@ -137,6 +147,11 @@ export const indentAPI = {
   delete: async (id) => {
     const response = await axios.delete(`/indents/${id}`);
     return response.data;
+  },
+
+  deleteAll: async () => {
+    const response = await axios.delete('/indents/all');
+    return response.data;
   }
 };
 
@@ -171,6 +186,11 @@ export const upcomingDeliveryAPI = {
 
   delete: async (id) => {
     const response = await axios.delete(`/material/upcoming-deliveries/${id}`);
+    return response.data;
+  },
+
+  deleteAll: async () => {
+    const response = await axios.delete('/material/upcoming-deliveries/all');
     return response.data;
   }
 };

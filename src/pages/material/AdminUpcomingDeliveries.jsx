@@ -268,6 +268,36 @@ export default function AdminUpcomingDeliveries() {
     }, 3000);
   };
 
+  // Delete All handler
+  const handleDeleteAll = async () => {
+    if (!window.confirm('Are you sure you want to delete all records? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      const response = await upcomingDeliveryAPI.deleteAll();
+      
+      if (response.success) {
+        // Clear local state
+        setDeliveries([]);
+        setTotalPages(1);
+        setCurrentPage(1);
+        
+        // Notify other components
+        window.dispatchEvent(new Event('intentCreated'));
+        localStorage.setItem('upcomingDeliveryRefresh', Date.now().toString());
+        
+        showToast(`Successfully deleted all ${response.deletedCount} upcoming deliveries`, 'success');
+      }
+    } catch (err) {
+      console.error('Delete all error:', err);
+      showToast(err.response?.data?.message || 'Failed to delete all upcoming deliveries', 'error');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <DashboardLayout title="Upcoming Deliveries">
     <div className="flex-1 p-6 bg-gray-50">

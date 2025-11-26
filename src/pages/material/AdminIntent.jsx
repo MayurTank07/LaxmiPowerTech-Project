@@ -404,6 +404,47 @@ export default function AdminIntent() {
     }, 3000);
   };
 
+  // Delete All handler
+  const handleDeleteAll = async () => {
+    if (!window.confirm('Are you sure you want to delete all records? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      
+      // Delete all purchase orders and indents
+      const [poResponse, indentResponse] = await Promise.all([
+        purchaseOrderAPI.deleteAll().catch(() => ({ success: false })),
+        indentAPI.deleteAll().catch(() => ({ success: false }))
+      ]);
+      
+      const poCount = poResponse.deletedCount || 0;
+      const indentCount = indentResponse.deletedCount || 0;
+      const totalCount = poCount + indentCount;
+      
+      if (totalCount > 0) {
+        // Clear local state
+        setIndents([]);
+        setTotalPages(1);
+        setCurrentPage(1);
+        
+        // Notify other components
+        window.dispatchEvent(new Event('intentCreated'));
+        localStorage.setItem('intentRefresh', Date.now().toString());
+        
+        showToast(`Successfully deleted all ${totalCount} records`, 'success');
+      } else {
+        showToast('No records to delete', 'error');
+      }
+    } catch (err) {
+      console.error('Delete all error:', err);
+      showToast(err.response?.data?.message || 'Failed to delete all records', 'error');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <DashboardLayout title="Intent (PO)">
     <div className="flex-1 p-6 bg-gray-50">
