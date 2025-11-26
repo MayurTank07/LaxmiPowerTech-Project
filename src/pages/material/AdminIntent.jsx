@@ -453,6 +453,14 @@ export default function AdminIntent() {
           <h1 className="text-2xl font-semibold text-gray-800">Intent (PO)</h1>
           <p className="text-sm text-gray-500">View all purchase order requests</p>
         </div>
+        <button
+          onClick={handleDeleteAll}
+          disabled={indents.length === 0 || deleting}
+          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          <Trash2 size={18} />
+          {deleting ? 'Deleting...' : 'Delete All'}
+        </button>
       </div>
 
       {error && (
