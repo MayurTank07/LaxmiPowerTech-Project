@@ -603,7 +603,7 @@ export default function AdminIntent() {
                           <span className="text-gray-400 text-xs">No image</span>
                         )}
                       </td>
-                      <td className="border px-4 py-2">{indent.requestedBy?.name || 'N/A'}</td>
+                      <td className="border px-4 py-2">{indent.requestedBy || 'N/A'}</td>
                       <td className="border px-4 py-2">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(indent.status)}`}>
                           {indent.status?.charAt(0).toUpperCase() + indent.status?.slice(1)}
