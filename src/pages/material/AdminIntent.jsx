@@ -53,46 +53,14 @@ export default function AdminIntent() {
     }
   };
 
-  // Listen for intent creation events from client side
-  useEffect(() => {
-    const handleIntentCreated = () => {
-      fetchIndents();
-    };
+  // ❌ DISABLED: Auto-refresh removed per client request
+  // No event listeners, no auto-polling, no auto-refresh
+  // Data loads only on initial mount and manual page reload
 
-    const handleStorageChange = (e) => {
-      if (e.key === 'intentRefresh') {
-        fetchIndents();
-        localStorage.removeItem('intentRefresh');
-      }
-    };
+  // ❌ DISABLED: Auto-refresh on focus removed per client request
 
-    window.addEventListener('intentCreated', handleIntentCreated);
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      window.removeEventListener('intentCreated', handleIntentCreated);
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
-
-  // Auto-refresh when window gains focus
-  useEffect(() => {
-    const handleFocus = () => {
-      fetchIndents();
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, [currentPage, search]);
-
-  // Periodic polling every 60 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchIndents();
-    }, 60000); // 60 seconds
-    
-    return () => clearInterval(interval);
-  }, [currentPage, search]);
+  // ❌ DISABLED: Periodic polling removed per client request
+  // No automatic refresh - data loads only on manual page reload
 
   const fetchIndents = async () => {
     try {

@@ -23,49 +23,14 @@ export default function AdminUpcomingDeliveries() {
     fetchDeliveries();
   }, [currentPage, search]);
 
-  // Listen for Intent creation events
-  useEffect(() => {
-    const handleIntentCreated = () => {
-      console.log('🔔 Intent created - refreshing Admin Upcoming Deliveries');
-      fetchDeliveries();
-    };
+  // ❌ DISABLED: Auto-refresh removed per client request
+  // No event listeners, no auto-polling, no auto-refresh
+  // Data loads only on initial mount and manual page reload
 
-    const handleStorageChange = (e) => {
-      if (e.key === 'intentRefresh' || e.key === 'upcomingDeliveryRefresh') {
-        fetchDeliveries();
-        localStorage.removeItem(e.key);
-      }
-    };
+  // ❌ DISABLED: Auto-refresh on focus removed per client request
 
-    window.addEventListener('intentCreated', handleIntentCreated);
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      window.removeEventListener('intentCreated', handleIntentCreated);
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
-
-  // Auto-refresh when window gains focus
-  useEffect(() => {
-    const handleFocus = () => {
-      console.log('🔄 Window focused - refreshing Admin Upcoming Deliveries data');
-      fetchDeliveries();
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, [currentPage, search]);
-
-  // Periodic polling every 60 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      console.log('🔄 Auto-refresh - fetching latest Admin Upcoming Deliveries data');
-      fetchDeliveries();
-    }, 60000); // 60 seconds
-    
-    return () => clearInterval(interval);
-  }, [currentPage, search]);
+  // ❌ DISABLED: Periodic polling removed per client request
+  // No automatic refresh - data loads only on manual page reload
 
   const fetchDeliveries = async () => {
     try {
@@ -365,7 +330,7 @@ export default function AdminUpcomingDeliveries() {
             </h2>
             <input
               type="text"
-              placeholder="Search by ST-ID or Transfer Number..."
+              placeholder="Search by Transfer Number..."
               className="border border-gray-300 rounded p-2 w-80 focus:ring-2 focus:ring-orange-400 text-sm"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -377,7 +342,6 @@ export default function AdminUpcomingDeliveries() {
               <table className="min-w-full border text-sm">
                 <thead className="bg-orange-100">
                   <tr>
-                    <th className="border px-4 py-2 text-left font-medium text-gray-700">ST-ID</th>
                     <th className="border px-4 py-2 text-left font-medium text-gray-700">Transfer No</th>
                     <th className="border px-4 py-2 text-left font-medium text-gray-700">Date</th>
                     <th className="border px-4 py-2 text-left font-medium text-gray-700">From</th>
@@ -390,10 +354,7 @@ export default function AdminUpcomingDeliveries() {
                 <tbody>
                   {deliveries.map((delivery) => (
                     <tr key={delivery._id} className="hover:bg-gray-50">
-                      <td className="border px-4 py-2 font-medium text-gray-900">
-                        {delivery.st_id}
-                      </td>
-                      <td className="border px-4 py-2">{delivery.transfer_number}</td>
+                      <td className="border px-4 py-2 font-medium text-gray-900">{delivery.transfer_number}</td>
                       <td className="border px-4 py-2 text-gray-600">
                         {formatDate(delivery.date)}
                       </td>
