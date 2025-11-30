@@ -1,10 +1,98 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit2, Save, X, Trash2, Upload } from 'lucide-react';
+import { ArrowLeft, Edit2, Save, X, Trash2, Upload, ChevronDown } from 'lucide-react';
 import { FaArrowLeft } from 'react-icons/fa';
 import { purchaseOrderAPI, indentAPI, materialCatalogAPI as materialAPI, branchesAPI } from '../../utils/materialAPI';
 import axios from '../../utils/axios';
 import MaterialLineItem from './MaterialLineItem';
+
+// Searchable Dropdown Component
+function SearchableDropdown({ value, onChange, options, placeholder, disabled }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const dropdownRef = useRef(null);
+  const inputRef = useRef(null);
+
+  const filteredOptions = options.filter(option =>
+    option.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+        setSearchTerm('');
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelect = (option) => {
+    onChange(option);
+    setIsOpen(false);
+    setSearchTerm('');
+  };
+
+  const handleInputClick = () => {
+    if (!disabled) {
+      setIsOpen(true);
+      inputRef.current?.focus();
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setSearchTerm(e.target.value);
+    setIsOpen(true);
+  };
+
+  const displayValue = isOpen ? searchTerm : (value || '');
+
+  return (
+    <div ref={dropdownRef} className="relative">
+      <div className="relative">
+        <input
+          ref={inputRef}
+          type="text"
+          value={displayValue}
+          onChange={handleInputChange}
+          onClick={handleInputClick}
+          placeholder={placeholder}
+          disabled={disabled}
+          className="w-full bg-white border border-gray-300 rounded-md px-3 py-2.5 pr-8 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-400 disabled:bg-gray-100 disabled:cursor-not-allowed"
+          autoComplete="off"
+        />
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+          <ChevronDown size={16} className={`text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </div>
+      </div>
+
+      {isOpen && !disabled && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+          {filteredOptions.length > 0 ? (
+            <ul className="py-1">
+              {filteredOptions.map((option, index) => (
+                <li
+                  key={index}
+                  onClick={() => handleSelect(option)}
+                  className={`px-3 py-2 text-sm cursor-pointer hover:bg-orange-50 transition-colors ${
+                    option === value ? 'bg-orange-100 text-orange-700 font-medium' : 'text-gray-900'
+                  }`}
+                >
+                  {option}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="px-3 py-2 text-sm text-gray-500 text-center">
+              No results found
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function IntentCardDetails() {
   const { id } = useParams();
@@ -591,34 +679,140 @@ export default function IntentCardDetails() {
           <div className="space-y-3">
             {formData.materials && formData.materials.length > 0 ? (
               editing ? (
-                // Edit mode - use MaterialLineItem
-                formData.materials.map((material, idx) => (
-                  <MaterialLineItem
-                    key={material.id}
-                    material={material}
-                    index={idx}
-                    isEditing={editing && editingMaterialId === material.id}
-                    onEdit={() => setEditingMaterialId(material.id)}
-                    onDoneEditing={() => setEditingMaterialId(null)}
-                    onRemove={() => removeMaterialRow(material.id)}
-                    onUpdate={(fieldName, value) => {
-                      // Handle cascading resets for dependent fields
-                      if (fieldName === 'category') {
-                        updateMaterial(material.id, { category: value, subCategory: '', subCategory1: '', subCategory2: '' });
-                      } else if (fieldName === 'subCategory') {
-                        updateMaterial(material.id, { subCategory: value, subCategory1: '', subCategory2: '' });
-                      } else if (fieldName === 'subCategory1') {
-                        updateMaterial(material.id, { subCategory1: value, subCategory2: '' });
-                      } else {
-                        updateMaterial(material.id, { [fieldName]: value });
-                      }
-                    }}
-                    categories={categories}
-                    getSubcategories={getSubcategories}
-                    getSubSubcategories={getSubSubcategories}
-                    getSubSubSubcategories={getSubSubSubcategories}
-                  />
-                ))
+                // Edit mode - show collapsed cards with edit/delete icons (Snapshot 3 & 4)
+                formData.materials.map((material, idx) => {
+                  const isExpanded = editingMaterialId === material.id;
+                  
+                  if (isExpanded) {
+                    // Expanded edit view for this specific material (Snapshot 4)
+                    return (
+                      <div key={material.id} className="bg-white rounded-lg border border-gray-200 p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-sm font-semibold text-gray-900">Material #{idx + 1}</h3>
+                          <button
+                            onClick={() => removeMaterialRow(material.id)}
+                            className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <X size={18} className="text-red-600" />
+                          </button>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          {/* Row 1: Category and Sub Category */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs text-gray-700 block mb-1.5">Category</label>
+                              <SearchableDropdown
+                                value={material.category}
+                                onChange={(value) => updateMaterial(material.id, { category: value, subCategory: '', subCategory1: '', subCategory2: '' })}
+                                options={categories}
+                                placeholder="Select category"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-700 block mb-1.5">Sub Category</label>
+                              <SearchableDropdown
+                                value={material.subCategory}
+                                onChange={(value) => updateMaterial(material.id, { subCategory: value, subCategory1: '', subCategory2: '' })}
+                                options={getSubcategories(material.category)}
+                                placeholder="Select sub category"
+                                disabled={!material.category}
+                              />
+                            </div>
+                          </div>
+                          
+                          {/* Row 2: Sub Category 1 and Sub Category 2 */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs text-gray-700 block mb-1.5">Sub Category 1</label>
+                              <SearchableDropdown
+                                value={material.subCategory1}
+                                onChange={(value) => updateMaterial(material.id, { subCategory1: value, subCategory2: '' })}
+                                options={getSubSubcategories(material.category, material.subCategory)}
+                                placeholder="—"
+                                disabled={!material.subCategory}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-700 block mb-1.5">Sub Category 2</label>
+                              <SearchableDropdown
+                                value={material.subCategory2}
+                                onChange={(value) => updateMaterial(material.id, { subCategory2: value })}
+                                options={getSubSubSubcategories(material.category, material.subCategory, material.subCategory1)}
+                                placeholder="—"
+                                disabled={!material.subCategory1}
+                              />
+                            </div>
+                          </div>
+                          
+                          {/* Row 3: Quantity */}
+                          <div>
+                            <label className="text-xs text-gray-700 block mb-1.5">Quantity</label>
+                            <input
+                              type="number"
+                              value={material.quantity || ''}
+                              onChange={(e) => updateMaterial(material.id, { quantity: e.target.value })}
+                              placeholder="Enter qty"
+                              className="w-full bg-white border border-gray-300 rounded-md px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-400"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  // Collapsed card view with edit/delete icons (Snapshot 3)
+                  return (
+                    <div key={material.id} className="bg-white rounded-lg border border-gray-200 p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold text-gray-900">Material #{idx + 1}</h3>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setEditingMaterialId(material.id)}
+                            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                          >
+                            <Edit2 size={16} className="text-gray-700" />
+                          </button>
+                          <button
+                            onClick={() => removeMaterialRow(material.id)}
+                            className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <X size={16} className="text-red-600" />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div>
+                            <span className="text-gray-500">Category:</span>
+                            <p className="text-gray-900 font-medium">{material.category || '—'}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Sub Category:</span>
+                            <p className="text-gray-900 font-medium">{material.subCategory || '—'}</p>
+                          </div>
+                        </div>
+                        {(material.subCategory1 || material.subCategory2) && (
+                          <div className="grid grid-cols-2 gap-3 text-xs">
+                            <div>
+                              <span className="text-gray-500">Sub Category 1:</span>
+                              <p className="text-gray-900 font-medium">{material.subCategory1 || '—'}</p>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Sub Category 2:</span>
+                              <p className="text-gray-900 font-medium">{material.subCategory2 || '—'}</p>
+                            </div>
+                          </div>
+                        )}
+                        <div className="text-xs">
+                          <span className="text-gray-500">Quantity:</span>
+                          <p className="text-gray-900 font-medium">{material.quantity || '—'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
               ) : (
                 // Read-only mode - detailed display matching snapshot
                 formData.materials.map((material, idx) => (

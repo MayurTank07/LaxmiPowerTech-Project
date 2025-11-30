@@ -103,10 +103,10 @@ export default function MaterialLineItem({
   onDoneEditing,
   loading = false
 }) {
-  const isComplete = material.category && material.subCategory && material.subCategory1 && material.subCategory2 && material.quantity;
+  const isComplete = material.category && material.subCategory && material.quantity;
 
-  // Collapsed Card View
-  if (!isEditing && isComplete) {
+  // Collapsed Card View - show when not editing this specific material
+  if (!isEditing) {
     return (
       <div className="bg-white border border-gray-300 rounded-md p-3 relative animate-fade-in shadow-sm">
         <div className="flex items-center justify-between">
