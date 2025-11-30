@@ -211,9 +211,25 @@ export default function AdminUpcomingDeliveries() {
     try {
       setSaving(true);
       
-      // Update status if changed
-      if (formData.status !== selectedDelivery.status) {
-        await upcomingDeliveryAPI.updateStatus(selectedDelivery._id, formData.status);
+      // Auto-calculate status based on received quantities
+      const allFullyReceived = formData.items.every(item => item.received_quantity >= item.st_quantity);
+      const anyPartiallyReceived = formData.items.some(item => item.received_quantity > 0 && item.received_quantity < item.st_quantity);
+      const nothingReceived = formData.items.every(item => item.received_quantity === 0);
+      
+      let calculatedStatus;
+      if (allFullyReceived) {
+        calculatedStatus = 'Transferred';
+      } else if (anyPartiallyReceived || formData.items.some(item => item.received_quantity > 0)) {
+        calculatedStatus = 'Partial';
+      } else if (nothingReceived) {
+        calculatedStatus = 'Pending';
+      } else {
+        calculatedStatus = 'Partial'; // Default to Partial if mixed
+      }
+      
+      // Update status (use calculated status instead of manual selection)
+      if (calculatedStatus !== selectedDelivery.status) {
+        await upcomingDeliveryAPI.updateStatus(selectedDelivery._id, calculatedStatus);
       }
       
       // Update items
@@ -597,16 +613,10 @@ export default function AdminUpcomingDeliveries() {
                 <div>
                   <label className="text-sm font-medium text-gray-600">Status</label>
                   {editing ? (
-                    <select
-                      value={formData.status}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                      className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-orange-400 bg-white text-gray-900"
-                      style={{ color: '#111827' }}
-                    >
-                      <option value="Pending" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Pending</option>
-                      <option value="Partial" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Partial</option>
-                      <option value="Transferred" style={{ color: '#111827', backgroundColor: '#FFFFFF' }}>Transferred</option>
-                    </select>
+                    <div className="flex items-center gap-2">
+                      <div>{getStatusBadge(selectedDelivery.status)}</div>
+                      <span className="text-xs text-orange-600 italic">→ Auto-updates on save</span>
+                    </div>
                   ) : (
                     <div>{getStatusBadge(selectedDelivery.status)}</div>
                   )}
