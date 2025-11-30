@@ -229,70 +229,70 @@ export default function DeliveryChecklist() {
 
                 {/* Main Content */}
                 <div className="px-6 py-6 -mt-4 pb-24">
-                    {/* Info Card */}
-                    <div className="bg-white rounded-lg border p-4 space-y-3 mb-4">
+                    {/* Info Card - Fixed Colors */}
+                    <div className="bg-white rounded-xl shadow-md border-2 border-gray-200 p-4 space-y-3 mb-4">
                         <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className="text-xs text-gray-600">ST-ID</label>
-                                <p className="font-medium text-gray-900">{delivery.st_id}</p>
+                            <div className="bg-gradient-to-r from-gray-50 to-white rounded-lg p-2 border border-gray-200">
+                                <label className="text-xs font-semibold text-gray-600 block mb-1">ST-ID</label>
+                                <p className="font-bold text-gray-900">{delivery.st_id}</p>
                             </div>
-                            <div>
-                                <label className="text-xs text-gray-600">Status</label>
-                                <span className={`inline-block px-2 py-1 text-xs rounded-full ${getStatusBadge(delivery.status)}`}>
+                            <div className="bg-gradient-to-r from-gray-50 to-white rounded-lg p-2 border border-gray-200">
+                                <label className="text-xs font-semibold text-gray-600 block mb-1">Status</label>
+                                <span className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(delivery.status)}`}>
                                     {delivery.status}
                                 </span>
                             </div>
-                            <div>
-                                <label className="text-xs text-gray-600">From</label>
-                                <p className="font-medium text-gray-900">{delivery.from}</p>
+                            <div className="bg-gradient-to-r from-gray-50 to-white rounded-lg p-2 border border-gray-200">
+                                <label className="text-xs font-semibold text-gray-600 block mb-1">From</label>
+                                <p className="font-bold text-gray-900">{delivery.from}</p>
                             </div>
-                            <div>
-                                <label className="text-xs text-gray-600">To</label>
-                                <p className="font-medium text-gray-900">{delivery.to}</p>
+                            <div className="bg-gradient-to-r from-gray-50 to-white rounded-lg p-2 border border-gray-200">
+                                <label className="text-xs font-semibold text-gray-600 block mb-1">To</label>
+                                <p className="font-bold text-gray-900">{delivery.to}</p>
                             </div>
-                            <div className="col-span-2">
-                                <label className="text-xs text-gray-600">Date</label>
-                                <p className="font-medium text-gray-900">{formatDate(delivery.date)}</p>
+                            <div className="col-span-2 bg-gradient-to-r from-gray-50 to-white rounded-lg p-2 border border-gray-200">
+                                <label className="text-xs font-semibold text-gray-600 block mb-1">Date</label>
+                                <p className="font-bold text-gray-900">{formatDate(delivery.date)}</p>
                             </div>
                         </div>
                     </div>
 
                     {/* All Transferred Banner */}
                     {allTransferred && (
-                        <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 mb-4">
+                        <div className="p-3 bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-300 rounded-xl flex items-center gap-2 mb-4 shadow-sm">
                             <CheckCircle className="text-green-600" size={20} />
-                            <span className="text-sm text-green-700 font-medium">All items transferred</span>
+                            <span className="text-sm text-green-800 font-bold">All items transferred</span>
                         </div>
                     )}
 
-                    {/* Summary */}
-                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mb-4">
-                        <div className="grid grid-cols-3 gap-2 text-sm">
-                            <div className="text-center">
-                                <span className="block text-xs text-gray-600">Submitted</span>
-                                <span className="block font-semibold text-gray-900">{totalSubmitted}</span>
+                    {/* Summary - Fixed Colors */}
+                    <div className="p-4 bg-gradient-to-br from-orange-50 to-white border-2 border-orange-200 rounded-xl mb-4 shadow-md">
+                        <div className="grid grid-cols-3 gap-3 text-sm">
+                            <div className="text-center bg-white rounded-lg p-2 border border-gray-200">
+                                <span className="block text-xs font-semibold text-gray-600 mb-1">Submitted</span>
+                                <span className="block font-bold text-lg text-gray-900">{totalSubmitted}</span>
                             </div>
-                            <div className="text-center">
-                                <span className="block text-xs text-gray-600">Received</span>
-                                <span className="block font-semibold text-green-600">{totalReceived}</span>
+                            <div className="text-center bg-white rounded-lg p-2 border border-green-200">
+                                <span className="block text-xs font-semibold text-gray-600 mb-1">Received</span>
+                                <span className="block font-bold text-lg text-green-600">{totalReceived}</span>
                             </div>
-                            <div className="text-center">
-                                <span className="block text-xs text-gray-600">Missing</span>
-                                <span className="block font-semibold text-orange-600">{missing}</span>
+                            <div className="text-center bg-white rounded-lg p-2 border border-orange-200">
+                                <span className="block text-xs font-semibold text-gray-600 mb-1">Missing</span>
+                                <span className="block font-bold text-lg text-orange-600">{missing}</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Items List */}
+                    {/* Items List - Fixed Colors */}
                     <div className="space-y-3">
                 {items.map((item, index) => (
-                    <div key={item.itemId || item._id} className="bg-white rounded-lg border p-3">
-                        <div className="space-y-2">
+                    <div key={item.itemId || item._id} className="bg-white rounded-xl border-2 border-gray-200 p-4 shadow-md">
+                        <div className="space-y-3">
                             {/* Item Info */}
                             <div className="flex items-start justify-between">
                                 <div className="flex-1">
-                                    <div className="text-sm font-medium text-gray-900">{item.category}</div>
-                                    <div className="text-xs text-gray-500 mt-0.5">
+                                    <div className="text-sm font-bold text-gray-900">{item.category}</div>
+                                    <div className="text-xs text-gray-600 mt-1 font-medium">
                                         {item.sub_category} • {item.sub_category1}
                                     </div>
                                 </div>
@@ -300,40 +300,41 @@ export default function DeliveryChecklist() {
                                     type="checkbox"
                                     checked={item.is_received}
                                     onChange={(e) => handleCheckboxChange(index, e.target.checked)}
-                                    className="w-5 h-5 accent-orange-500 mt-1"
+                                    className="w-6 h-6 accent-orange-500 mt-1 cursor-pointer"
                                 />
                             </div>
 
                             {/* Quantities */}
                             <div className="flex items-center gap-3">
                                 <div className="flex-1">
-                                    <label className="text-xs text-gray-500 block mb-1">ST Quantity</label>
-                                    <div className="px-3 py-2 bg-gray-100 rounded text-sm font-medium text-gray-700">
+                                    <label className="text-xs font-semibold text-gray-600 block mb-1.5">ST Quantity</label>
+                                    <div className="px-3 py-2.5 bg-gradient-to-r from-gray-100 to-gray-50 rounded-lg text-sm font-bold text-gray-900 border border-gray-300">
                                         {item.st_quantity}
                                     </div>
                                 </div>
                                 <div className="flex-1">
-                                    <label className="text-xs text-gray-500 block mb-1">Received Quantity</label>
+                                    <label className="text-xs font-semibold text-gray-600 block mb-1.5">Received Quantity</label>
                                     <input
                                         type="number"
                                         min="0"
                                         max={item.st_quantity}
                                         value={item.received_quantity}
                                         onChange={(e) => handleReceivedQuantityChange(index, e.target.value)}
-                                        className={`w-full px-3 py-2 border rounded text-sm ${
+                                        className={`w-full px-3 py-2.5 border-2 rounded-lg text-sm font-bold bg-white ${
                                             validationErrors[index] 
-                                                ? 'border-red-500 focus:ring-red-500' 
-                                                : 'border-gray-300 focus:ring-orange-500'
+                                                ? 'border-red-500 focus:ring-red-500 text-red-900' 
+                                                : 'border-gray-300 focus:ring-orange-500 text-gray-900'
                                         } focus:ring-2 focus:outline-none`}
+                                        style={{ colorScheme: 'light' }}
                                     />
                                 </div>
                             </div>
 
                             {/* Validation Error */}
                             {validationErrors[index] && (
-                                <div className="flex items-center gap-1 text-red-600 text-xs">
+                                <div className="flex items-center gap-2 text-red-700 text-xs bg-red-50 border border-red-200 rounded-lg p-2">
                                     <AlertCircle size={14} />
-                                    <span>{validationErrors[index]}</span>
+                                    <span className="font-semibold">{validationErrors[index]}</span>
                                 </div>
                             )}
                         </div>

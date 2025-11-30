@@ -619,6 +619,7 @@ export default function AdminIntent() {
                     value={filterDateFrom}
                     onChange={(e) => setFilterDateFrom(e.target.value)}
                     className="w-full border-2 border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white hover:border-gray-400 transition-colors"
+                    style={{ colorScheme: 'light' }}
                   />
                 </div>
                 
@@ -630,6 +631,7 @@ export default function AdminIntent() {
                     value={filterDateTo}
                     onChange={(e) => setFilterDateTo(e.target.value)}
                     className="w-full border-2 border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white hover:border-gray-400 transition-colors"
+                    style={{ colorScheme: 'light' }}
                   />
                 </div>
                 

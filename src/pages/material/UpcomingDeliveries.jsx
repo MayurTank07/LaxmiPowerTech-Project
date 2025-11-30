@@ -251,6 +251,7 @@ export default function UpcomingDeliveries({ isTabView = false }) {
                                     value={filterDateFrom}
                                     onChange={(e) => setFilterDateFrom(e.target.value)}
                                     className="w-full border border-gray-300 rounded-md px-2.5 py-2 text-xs text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
+                                    style={{ colorScheme: 'light' }}
                                 />
                             </div>
                             <div>
@@ -260,6 +261,7 @@ export default function UpcomingDeliveries({ isTabView = false }) {
                                     value={filterDateTo}
                                     onChange={(e) => setFilterDateTo(e.target.value)}
                                     className="w-full border border-gray-300 rounded-md px-2.5 py-2 text-xs text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
+                                    style={{ colorScheme: 'light' }}
                                 />
                             </div>
                         </div>

@@ -710,163 +710,104 @@ export default function MaterialCardDetails() {
 
   // Read-Only View
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      {/* Header */}
-      <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="px-4 py-3 flex items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-24">
+      {/* Header with Gradient - Matching Intent PO Style */}
+      <div className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg sticky top-0 z-10">
+        <div className="px-4 py-4 flex items-center justify-between">
           <button
             onClick={() => navigate('/dashboard/material/site-transfers')}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-white/20 rounded-full transition-colors"
           >
-            <ArrowLeft size={20} className="text-gray-700" />
+            <ArrowLeft size={20} className="text-white" />
           </button>
-          <h1 className="text-lg font-semibold text-gray-800">Transfer Details</h1>
+          <h1 className="text-lg font-bold text-white">Transfer Details</h1>
           <div className="w-8" /> {/* Spacer for alignment */}
         </div>
       </div>
 
       {/* Content */}
-      <div className="px-4 pt-4 space-y-6">
-        {/* Header Section */}
-        <div className="pb-4 border-b border-gray-300">
+      <div className="px-4 pt-4 space-y-4">
+        {/* Header Card - Elevated Design */}
+        <div className="bg-white rounded-xl shadow-md p-4 border border-gray-200">
           <div className="flex justify-between items-start mb-3">
             <div>
-              <p className="text-xs text-gray-500 mb-1">Site Transfer ID</p>
-              <p className="text-base font-semibold text-gray-800">{transfer.siteTransferId}</p>
+              <p className="text-xs font-medium text-gray-500 mb-1">Site Transfer ID</p>
+              <p className="text-lg font-bold text-gray-900">{transfer.siteTransferId}</p>
             </div>
-            <span className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(transfer.status)}`}>
+            <span className={`px-3 py-1.5 text-xs font-semibold rounded-full shadow-sm ${getStatusColor(transfer.status)}`}>
               {transfer.status?.charAt(0).toUpperCase() + transfer.status?.slice(1)}
             </span>
           </div>
-          <p className="text-xs text-gray-400">
-            Created: {formatDate(transfer.createdAt)}
-          </p>
-        </div>
-
-        {/* Transfer Info Section */}
-        <div className="pb-4 border-b border-gray-300">
-          <h2 className="text-sm font-semibold text-gray-800 mb-4">Transfer Information</h2>
-          
-          <div className="space-y-3">
-            {/* From Site */}
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">From Site</label>
-              {editing ? (
-                <input
-                  type="text"
-                  value={formData.fromSite}
-                  onChange={(e) => setFormData({ ...formData, fromSite: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:border-orange-500"
-                />
-              ) : (
-                <p className="text-sm font-medium text-gray-800">{transfer.fromSite}</p>
-              )}
-            </div>
-
-            {/* To Site */}
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">To Site</label>
-              {editing ? (
-                <input
-                  type="text"
-                  value={formData.toSite}
-                  onChange={(e) => setFormData({ ...formData, toSite: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:border-orange-500"
-                />
-              ) : (
-                <p className="text-sm font-medium text-gray-800">{transfer.toSite}</p>
-              )}
-            </div>
-
-            {/* Requested By */}
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">Requested By</label>
-              {editing ? (
-                <input
-                  type="text"
-                  value={formData.requestedBy}
-                  onChange={(e) => setFormData({ ...formData, requestedBy: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:border-orange-500"
-                />
-              ) : (
-                <p className="text-sm font-medium text-gray-800">{transfer.requestedBy}</p>
-              )}
-            </div>
-
-            {/* Status */}
-            {editing && (
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Status</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:border-orange-500"
-                >
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
-                  <option value="transferred">Transferred</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-              </div>
-            )}
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <span className="font-medium">Created:</span>
+            <span>{formatDate(transfer.createdAt)}</span>
           </div>
         </div>
 
-        {/* Materials Section */}
-        <div className="pb-4 border-b border-gray-300">
-          <h2 className="text-sm font-semibold text-gray-800 mb-4">Materials ({transfer.materials?.length || 0})</h2>
+        {/* Transfer Info Card */}
+        <div className="bg-white rounded-xl shadow-md p-4 border border-gray-200">
+          <h2 className="text-sm font-bold text-gray-900 mb-4 pb-2 border-b border-orange-200">Transfer Information</h2>
+          
+          <div className="space-y-3">
+            {/* From Site */}
+            <div className="bg-gradient-to-r from-gray-50 to-white rounded-lg p-3 border border-gray-200">
+              <label className="text-xs font-semibold text-gray-600 block mb-1">From Site</label>
+              <p className="text-sm font-bold text-gray-900">{transfer.fromSite}</p>
+            </div>
+
+            {/* To Site */}
+            <div className="bg-gradient-to-r from-gray-50 to-white rounded-lg p-3 border border-gray-200">
+              <label className="text-xs font-semibold text-gray-600 block mb-1">To Site</label>
+              <p className="text-sm font-bold text-gray-900">{transfer.toSite}</p>
+            </div>
+
+            {/* Requested By */}
+            <div className="bg-gradient-to-r from-gray-50 to-white rounded-lg p-3 border border-gray-200">
+              <label className="text-xs font-semibold text-gray-600 block mb-1">Requested By</label>
+              <p className="text-sm font-bold text-gray-900">{transfer.requestedBy}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Materials Card */}
+        <div className="bg-white rounded-xl shadow-md p-4 border border-gray-200">
+          <h2 className="text-sm font-bold text-gray-900 mb-4 pb-2 border-b border-orange-200">
+            Materials <span className="text-orange-600">({transfer.materials?.length || 0})</span>
+          </h2>
           
           <div className="space-y-3">
             {transfer.materials?.map((material, index) => (
-              <div key={index} className="border border-gray-300 rounded-md p-3 bg-white">
-                {editing ? (
-                  <div className="space-y-2">
-                    <input
-                      type="text"
-                      value={formData.materials[index]?.itemName || ''}
-                      onChange={(e) => updateMaterial(index, 'itemName', e.target.value)}
-                      className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-orange-500"
-                      placeholder="Item Name"
-                    />
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="number"
-                        value={formData.materials[index]?.quantity || ''}
-                        onChange={(e) => updateMaterial(index, 'quantity', e.target.value)}
-                        className="px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-orange-500"
-                        placeholder="Quantity"
-                      />
-                      <input
-                        type="text"
-                        value={formData.materials[index]?.uom || ''}
-                        onChange={(e) => updateMaterial(index, 'uom', e.target.value)}
-                        className="px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:border-orange-500"
-                        placeholder="UOM"
-                      />
-                    </div>
+              <div key={index} className="bg-gradient-to-br from-orange-50 to-white border-2 border-orange-200 rounded-lg p-3 shadow-sm">
+                <div className="flex items-start justify-between mb-2">
+                  <p className="text-sm font-bold text-gray-900 flex-1">{material.itemName}</p>
+                  <span className="ml-2 px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full">#{index + 1}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mt-2">
+                  <div className="bg-white rounded-md p-2 border border-gray-200">
+                    <span className="text-xs font-medium text-gray-600 block">Quantity</span>
+                    <span className="text-sm font-bold text-gray-900">{material.quantity}</span>
                   </div>
-                ) : (
-                  <>
-                    <p className="text-sm font-medium text-gray-800 mb-1">{material.itemName}</p>
-                    <div className="flex justify-between text-xs text-gray-600">
-                      <span>Quantity: {material.quantity}</span>
-                      <span>UOM: {material.uom}</span>
-                    </div>
-                    {material.remarks && (
-                      <p className="text-xs text-gray-500 mt-1">Remarks: {material.remarks}</p>
-                    )}
-                  </>
+                  <div className="bg-white rounded-md p-2 border border-gray-200">
+                    <span className="text-xs font-medium text-gray-600 block">UOM</span>
+                    <span className="text-sm font-bold text-gray-900">{material.uom}</span>
+                  </div>
+                </div>
+                {material.remarks && (
+                  <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                    <span className="text-xs font-semibold text-blue-700 block mb-1">Remarks:</span>
+                    <p className="text-xs text-blue-900">{material.remarks}</p>
+                  </div>
                 )}
               </div>
             ))}
           </div>
         </div>
 
-        {/* Attachments Section */}
+        {/* Attachments Card */}
         {transfer.attachments && transfer.attachments.length > 0 && (
-          <div className="pb-4">
-            <h2 className="text-sm font-semibold text-gray-800 mb-4">
-              Attachments ({transfer.attachments.length})
+          <div className="bg-white rounded-xl shadow-md p-4 border border-gray-200">
+            <h2 className="text-sm font-bold text-gray-900 mb-4 pb-2 border-b border-orange-200">
+              Attachments <span className="text-orange-600">({transfer.attachments.length})</span>
             </h2>
             
             <div className="grid grid-cols-2 gap-3">
@@ -877,7 +818,7 @@ export default function MaterialCardDetails() {
                 const isImage = attachment.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i);
                 
                 return (
-                  <div key={index} className="relative border border-gray-300 rounded-md overflow-hidden bg-white">
+                  <div key={index} className="relative border-2 border-gray-300 rounded-lg overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
                     {isImage ? (
                       <img 
                         src={fileURL} 
@@ -888,7 +829,7 @@ export default function MaterialCardDetails() {
                         }}
                       />
                     ) : (
-                      <div className="w-full h-32 flex items-center justify-center bg-gray-100">
+                      <div className="w-full h-32 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
                         <span className="text-4xl">📎</span>
                       </div>
                     )}
@@ -908,8 +849,8 @@ export default function MaterialCardDetails() {
                     </button>
                     
                     {/* File Name */}
-                    <div className="p-2 bg-white border-t border-gray-200">
-                      <p className="text-xs text-gray-600 truncate">{fileName}</p>
+                    <div className="p-2 bg-gradient-to-r from-gray-50 to-white border-t border-gray-200">
+                      <p className="text-xs font-medium text-gray-700 truncate">{fileName}</p>
                     </div>
                   </div>
                 );
