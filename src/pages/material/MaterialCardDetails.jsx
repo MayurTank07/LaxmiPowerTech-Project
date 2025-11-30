@@ -684,6 +684,7 @@ export default function MaterialCardDetails() {
           </div>
         </div>
       </div>
+    </div>
     );
   }
 
