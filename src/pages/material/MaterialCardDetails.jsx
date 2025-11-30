@@ -22,6 +22,20 @@ export default function MaterialCardDetails() {
   const [sites, setSites] = useState([]);
   const [newAttachments, setNewAttachments] = useState([]);
 
+  // Toast notification helper - Same as Intent PO
+  const showToast = (message, type = 'success') => {
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white z-[9999] ${
+      type === 'success' ? 'bg-green-500' : 'bg-red-500'
+    }`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.remove();
+    }, 3000);
+  };
+
   useEffect(() => {
     fetchTransferDetails();
     fetchMaterialsAndSites();
@@ -91,11 +105,11 @@ export default function MaterialCardDetails() {
         });
       } else {
         console.error('Invalid response from API:', response);
-        alert('Failed to load transfer details');
+        showToast('Failed to load transfer details', 'error');
       }
     } catch (err) {
       console.error('Error fetching site transfer details:', err);
-      alert('Failed to load transfer details. Please try again.');
+      showToast('Failed to load transfer details. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -167,39 +181,34 @@ export default function MaterialCardDetails() {
   };
 
   const handleSaveChanges = async () => {
-    // Validate form
-    if (!formData.fromSite.trim()) {
-      alert('Please select From Site');
+    // Validate form - Same as Intent PO
+    if (!formData.fromSite || !formData.fromSite.trim()) {
+      showToast('Please select From Site', 'error');
       return;
     }
-    if (!formData.toSite.trim()) {
-      alert('Please select To Site');
+    if (!formData.toSite || !formData.toSite.trim()) {
+      showToast('Please select To Site', 'error');
       return;
     }
-    // Requested By validation removed - field is read-only
-    if (formData.materials.length === 0) {
-      alert('Please add at least one material');
-      return;
-    }
-    
-    // Validate all materials are complete
-    const incompleteMaterials = formData.materials.filter(
-      m => !m.category || !m.subCategory || !m.subCategory1 || !m.subCategory2 || !m.quantity
-    );
-    if (incompleteMaterials.length > 0) {
-      alert('Please complete all material details');
+    // Validate materials exist (no field-level validation like Intent PO)
+    if (!formData.materials || formData.materials.length === 0) {
+      showToast('Please add at least one material', 'error');
       return;
     }
 
     try {
       setSubmitting(true);
       
-      // Convert materials to API format
+      // Convert materials to API format - Same as Intent PO with conditional dashes
       const materialsData = formData.materials.map(m => ({
-        itemName: `${m.category} - ${m.subCategory} - ${m.subCategory1} - ${m.subCategory2}`,
-        quantity: parseInt(m.quantity),
+        itemName: m.itemName || `${m.category}${m.subCategory ? ' - ' + m.subCategory : ''}${m.subCategory1 ? ' - ' + m.subCategory1 : ''}${m.subCategory2 ? ' - ' + m.subCategory2 : ''}`,
+        category: m.category || '',
+        subCategory: m.subCategory || '',
+        subCategory1: m.subCategory1 || '',
+        subCategory2: m.subCategory2 || '',
+        quantity: parseInt(m.quantity) || 0,
         uom: m.uom || 'Units',
-        remarks: formData.remarks
+        remarks: m.remarks || formData.remarks || ''
       }));
       
       const updateData = {
@@ -215,13 +224,20 @@ export default function MaterialCardDetails() {
         setTransfer(response.data);
         setEditing(false);
         setNewAttachments([]);
-        alert('Site transfer updated successfully!');
+        showToast('Site transfer updated successfully!', 'success');
         // Refresh data
         fetchTransferDetails();
+        
+        // Dispatch sync events
+        window.dispatchEvent(new CustomEvent('siteTransferCreated', { detail: response.data }));
+        window.dispatchEvent(new Event('upcomingDeliveryRefresh'));
+        localStorage.setItem('siteTransferRefresh', Date.now().toString());
+        localStorage.setItem('upcomingDeliveryRefresh', Date.now().toString());
       }
     } catch (err) {
       console.error('Error updating site transfer:', err);
-      alert('Failed to update site transfer. Please try again.');
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to update site transfer. Please try again.';
+      showToast(errorMessage, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -236,12 +252,15 @@ export default function MaterialCardDetails() {
       setLoading(true);
       const response = await siteTransferAPI.delete(id);
       if (response.success) {
-        alert('Site transfer and associated files deleted successfully');
-        navigate('/dashboard/material/site-transfers');
+        showToast('Site transfer and associated files deleted successfully', 'success');
+        setTimeout(() => {
+          navigate('/dashboard/material/site-transfers');
+        }, 1500);
       }
     } catch (err) {
       console.error('Error deleting site transfer:', err);
-      alert('Failed to delete site transfer. Please try again.');
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to delete site transfer. Please try again.';
+      showToast(errorMessage, 'error');
     } finally {
       setLoading(false);
     }
