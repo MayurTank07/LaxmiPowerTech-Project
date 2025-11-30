@@ -670,10 +670,10 @@ export default function AdminUpcomingDeliveries() {
                                 max={item.st_quantity}
                                 value={item.received_quantity}
                                 onChange={(e) => updateItem(index, 'received_quantity', e.target.value)}
-                                className="w-20 border border-gray-300 rounded px-2 py-1 text-right"
+                                className="w-20 border-2 border-orange-300 rounded-lg px-3 py-2 text-right focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900 font-medium"
                               />
                             ) : (
-                              item.received_quantity
+                              <span className="font-medium text-gray-900">{item.received_quantity}</span>
                             )}
                           </td>
                           <td className="border px-3 py-2 text-center">
@@ -681,8 +681,15 @@ export default function AdminUpcomingDeliveries() {
                               <input
                                 type="checkbox"
                                 checked={item.is_received}
-                                onChange={(e) => updateItem(index, 'is_received', e.target.checked)}
-                                className="w-4 h-4 accent-orange-500"
+                                onChange={(e) => {
+                                  const isChecked = e.target.checked;
+                                  // Auto-fill: if checked, set received_quantity to st_quantity
+                                  if (isChecked) {
+                                    updateItem(index, 'received_quantity', item.st_quantity);
+                                  }
+                                  updateItem(index, 'is_received', isChecked);
+                                }}
+                                className="w-5 h-5 accent-orange-500 cursor-pointer"
                               />
                             ) : (
                               <span className={`inline-block w-4 h-4 rounded ${item.is_received ? 'bg-green-500' : 'bg-gray-300'}`}></span>

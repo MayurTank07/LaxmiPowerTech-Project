@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Upload, X } from "lucide-react";
 
 export default function DeliveryDetails() {
     const location = useLocation();
@@ -8,6 +8,8 @@ export default function DeliveryDetails() {
 
     const { item, type } = location.state || {};
     const [materials, setMaterials] = useState(item?.materials || []);
+    const [deliveryImages, setDeliveryImages] = useState([]);
+    const [imagePreview, setImagePreview] = useState([]);
 
     if (!item || !type) {
         navigate("/"); // fallback if accessed directly
@@ -22,14 +24,34 @@ export default function DeliveryDetails() {
         );
     };
 
+    const handleImageUpload = (e) => {
+        const files = Array.from(e.target.files);
+        setDeliveryImages(prev => [...prev, ...files]);
+        
+        // Create preview URLs
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(prev => [...prev, reader.result]);
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const removeImage = (index) => {
+        setDeliveryImages(prev => prev.filter((_, i) => i !== index));
+        setImagePreview(prev => prev.filter((_, i) => i !== index));
+    };
+
     const handleSubmit = () => {
-        // send updated materials back
+        // send updated materials and images back
         navigate(-1, {
             state: {
                 updated: true,
                 type,
                 id: item.id,
                 materials,
+                deliveryImages, // Include images in submission
             },
         });
     };
@@ -92,6 +114,49 @@ export default function DeliveryDetails() {
                                     </div>
                                 ))}
                             </div>
+                        </div>
+
+                        {/* Delivery Proof Upload */}
+                        <div className="bg-white rounded-lg border p-4">
+                            <h2 className="font-semibold text-gray-900 mb-3">Delivery Proof (Optional)</h2>
+                            
+                            {/* Image Preview */}
+                            {imagePreview.length > 0 && (
+                                <div className="grid grid-cols-2 gap-3 mb-3">
+                                    {imagePreview.map((preview, index) => (
+                                        <div key={index} className="relative border border-gray-300 rounded-lg overflow-hidden">
+                                            <img 
+                                                src={preview} 
+                                                alt={`Delivery proof ${index + 1}`}
+                                                className="w-full h-32 object-cover"
+                                            />
+                                            <button
+                                                onClick={() => removeImage(index)}
+                                                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                            <div className="p-2 bg-white border-t border-gray-200">
+                                                <p className="text-xs text-gray-600 truncate">{deliveryImages[index]?.name}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            
+                            {/* Upload Button */}
+                            <label className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-orange-500 hover:bg-orange-50 transition-colors">
+                                <Upload size={20} className="text-gray-500" />
+                                <span className="text-sm text-gray-600 font-medium">Upload Delivery Proof (Challan, etc.)</span>
+                                <input
+                                    type="file"
+                                    multiple
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                    className="hidden"
+                                />
+                            </label>
+                            <p className="text-xs text-gray-500 mt-2">Upload images of delivery challan or proof</p>
                         </div>
                     </div>
                 </div>
