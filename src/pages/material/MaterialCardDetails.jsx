@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit2, Save, X, Trash2, Upload } from 'lucide-react';
+import { ArrowLeft, Plus, X, Trash2, Upload } from 'lucide-react';
 import { siteTransferAPI, materialCatalogAPI as materialAPI, branchesAPI } from '../../utils/materialAPI';
 import MaterialLineItem from './MaterialLineItem';
 
@@ -66,13 +66,14 @@ export default function MaterialCardDetails() {
         setTransfer(response.data);
         // Convert materials to editable format
         const editableMaterials = (response.data.materials || []).map((m, idx) => {
-          // Parse itemName to extract category, subCategory, subCategory1
+          // Parse itemName to extract category, subCategory, subCategory1, subCategory2
           const parts = m.itemName?.split(' - ') || [];
           return {
             id: Date.now() + idx,
             category: parts[0] || '',
             subCategory: parts[1] || '',
             subCategory1: parts[2] || '',
+            subCategory2: parts[3] || '',
             quantity: m.quantity || '',
             itemName: m.itemName,
             uom: m.uom,
@@ -147,6 +148,7 @@ export default function MaterialCardDetails() {
         category: parts[0] || '',
         subCategory: parts[1] || '',
         subCategory1: parts[2] || '',
+        subCategory2: parts[3] || '',
         quantity: m.quantity || '',
         itemName: m.itemName,
         uom: m.uom,
@@ -182,7 +184,7 @@ export default function MaterialCardDetails() {
     
     // Validate all materials are complete
     const incompleteMaterials = formData.materials.filter(
-      m => !m.category || !m.subCategory || !m.subCategory1 || !m.quantity
+      m => !m.category || !m.subCategory || !m.subCategory1 || !m.subCategory2 || !m.quantity
     );
     if (incompleteMaterials.length > 0) {
       alert('Please complete all material details');
@@ -194,7 +196,7 @@ export default function MaterialCardDetails() {
       
       // Convert materials to API format
       const materialsData = formData.materials.map(m => ({
-        itemName: `${m.category} - ${m.subCategory} - ${m.subCategory1}`,
+        itemName: `${m.category} - ${m.subCategory} - ${m.subCategory1} - ${m.subCategory2}`,
         quantity: parseInt(m.quantity),
         uom: m.uom || 'Units',
         remarks: formData.remarks
@@ -286,6 +288,7 @@ export default function MaterialCardDetails() {
           category: '',
           subCategory: '',
           subCategory1: '',
+          subCategory2: '',
           quantity: ''
         }
       ]
@@ -310,8 +313,12 @@ export default function MaterialCardDetails() {
           if (field === 'category') {
             updated.subCategory = '';
             updated.subCategory1 = '';
+            updated.subCategory2 = '';
           } else if (field === 'subCategory') {
             updated.subCategory1 = '';
+            updated.subCategory2 = '';
+          } else if (field === 'subCategory1') {
+            updated.subCategory2 = '';
           }
           return updated;
         }
