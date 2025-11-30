@@ -408,10 +408,10 @@ export default function MaterialCardDetails() {
           <h2 className="text-lg font-bold text-gray-900 mb-2">Transfer Not Found</h2>
           <p className="text-gray-600 mb-6 text-sm">The material transfer you're looking for doesn't exist or has been deleted.</p>
           <button
-            onClick={() => navigate('/dashboard/material/site-transfers')}
+            onClick={() => navigate(-1)}
             className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
           >
-            Back to Transfers
+            Go Back
           </button>
         </div>
       </div>
@@ -740,7 +740,7 @@ export default function MaterialCardDetails() {
         <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 pt-6 pb-8 rounded-b-3xl shadow-lg relative">
           <button
             className="absolute top-6 left-6 text-white flex items-center gap-2 hover:bg-white/20 px-3 py-1.5 rounded-full transition-all"
-            onClick={() => navigate('/dashboard/material/site-transfers')}
+            onClick={() => navigate(-1)}
           >
             <ArrowLeft size={16} />
             <span className="text-sm font-medium">Back</span>
@@ -888,15 +888,9 @@ export default function MaterialCardDetails() {
           )}
         </div>
 
-        {/* Fixed Bottom Buttons - EXACTLY matching Intent Details */}
+        {/* Fixed Bottom Buttons - Only Edit and Delete (No Back Button) */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4 z-50">
           <div className="max-w-md mx-auto flex gap-3">
-            <button
-              onClick={() => navigate('/dashboard/material/site-transfers')}
-              className="flex-1 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-            >
-              Back
-            </button>
             <button
               onClick={handleEdit}
               className="flex-1 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"

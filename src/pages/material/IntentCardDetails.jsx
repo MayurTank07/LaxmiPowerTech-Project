@@ -405,10 +405,10 @@ export default function IntentCardDetails() {
           <p className="text-gray-900 font-semibold text-lg mb-2">Intent Not Found</p>
           <p className="text-gray-600 text-sm mb-6">The requested intent could not be found</p>
           <button 
-            onClick={() => navigate('/material/intent')} 
+            onClick={() => navigate(-1)} 
             className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-orange-600 hover:to-orange-700 transition-all shadow-md"
           >
-            Go Back to Intent List
+            Go Back
           </button>
         </div>
       </div>
@@ -440,7 +440,7 @@ export default function IntentCardDetails() {
         <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 pt-6 pb-8 rounded-b-3xl shadow-lg relative">
           <button
             className="absolute top-6 left-6 text-white flex items-center gap-2 hover:bg-white/20 px-3 py-1.5 rounded-full transition-all"
-            onClick={() => navigate('/material/intent')}
+            onClick={() => navigate(-1)}
           >
             <FaArrowLeft size={16} />
             <span className="text-sm font-medium">Back</span>
@@ -731,12 +731,6 @@ export default function IntentCardDetails() {
             </div>
           ) : (
             <div className="flex gap-3">
-              <button
-                onClick={() => navigate('/material/intent')}
-                className="flex-1 bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Back
-              </button>
               <button
                 onClick={handleEdit}
                 className="flex-1 bg-orange-500 text-white font-semibold py-3 rounded-lg hover:bg-orange-600 transition-colors shadow-md"
