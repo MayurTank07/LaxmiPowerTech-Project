@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { upcomingDeliveryAPI, indentAPI, purchaseOrderAPI } from "../../utils/materialAPI";
+import { upcomingDeliveryAPI, indentAPI, purchaseOrderAPI, branchesAPI } from "../../utils/materialAPI";
 import { Eye, Trash2, X, Edit2, Save } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import axios from "../../utils/axios";
@@ -18,10 +18,30 @@ export default function AdminUpcomingDeliveries() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [relatedIndent, setRelatedIndent] = useState(null);
+  
+  // ✅ Filter states
+  const [filterSite, setFilterSite] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
+  const [sites, setSites] = useState([]);
 
   useEffect(() => {
     fetchDeliveries();
-  }, [currentPage, search]);
+    fetchSites();
+  }, [currentPage, search, filterSite, filterStatus, filterDateFrom, filterDateTo]);
+  
+  // ✅ Fetch sites for filter dropdown
+  const fetchSites = async () => {
+    try {
+      const branches = await branchesAPI.getAll();
+      const sitesList = branches.map(branch => branch.name).sort();
+      setSites(sitesList);
+    } catch (err) {
+      console.error('Error fetching sites:', err);
+      setSites([]);
+    }
+  };
 
   // ❌ DISABLED: Auto-refresh removed per client request
   // No event listeners, no auto-polling, no auto-refresh
@@ -38,9 +58,43 @@ export default function AdminUpcomingDeliveries() {
       setError(null);
       const response = await upcomingDeliveryAPI.getAll(currentPage, 20, search);
       if (response.success) {
-        const sortedData = (response.data || []).sort(
+        let sortedData = (response.data || []).sort(
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
         );
+        
+        // ✅ Apply filters client-side
+        if (filterSite) {
+          sortedData = sortedData.filter(item => 
+            item.from?.toLowerCase().includes(filterSite.toLowerCase()) ||
+            item.to?.toLowerCase().includes(filterSite.toLowerCase())
+          );
+        }
+        
+        if (filterStatus) {
+          sortedData = sortedData.filter(item => 
+            item.status?.toLowerCase() === filterStatus.toLowerCase()
+          );
+        }
+        
+        if (filterDateFrom) {
+          const fromDate = new Date(filterDateFrom);
+          fromDate.setHours(0, 0, 0, 0);
+          sortedData = sortedData.filter(item => {
+            const itemDate = new Date(item.date || item.createdAt);
+            itemDate.setHours(0, 0, 0, 0);
+            return itemDate >= fromDate;
+          });
+        }
+        
+        if (filterDateTo) {
+          const toDate = new Date(filterDateTo);
+          toDate.setHours(23, 59, 59, 999);
+          sortedData = sortedData.filter(item => {
+            const itemDate = new Date(item.date || item.createdAt);
+            return itemDate <= toDate;
+          });
+        }
+        
         setDeliveries(sortedData);
         setTotalPages(response.pagination?.pages || 1);
       } else {
@@ -324,20 +378,90 @@ export default function AdminUpcomingDeliveries() {
         </div>
       ) : (
         <div className="bg-white shadow rounded-lg p-4 overflow-x-auto">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-700">
-              Deliveries Table ({deliveries.length} records)
-            </h2>
-            <input
-              type="text"
-              placeholder="Search by Transfer Number..."
-              className="border border-gray-300 rounded p-2 w-80 focus:ring-2 focus:ring-orange-400 text-sm"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          <div className="mb-4">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-lg font-semibold text-gray-700">
+                Upcoming Deliveries ({filteredDeliveries.length} records)
+              </h2>
+              <input
+                type="text"
+                placeholder="Search by Transfer Number..."
+                className="border border-gray-300 rounded p-2 w-80 focus:ring-2 focus:ring-orange-400 text-sm"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            
+            {/* Filters Row */}
+            <div className="flex gap-3 items-end flex-wrap">
+              {/* Site Filter */}
+              <div className="flex-1 min-w-[200px]">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Filter by Site</label>
+                <select
+                  value={filterSite}
+                  onChange={(e) => setFilterSite(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white"
+                >
+                  <option value="">All Sites</option>
+                  {sites.map(site => (
+                    <option key={site} value={site}>{site}</option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Status Filter */}
+              <div className="flex-1 min-w-[180px]">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Filter by Status</label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white"
+                >
+                  <option value="">All Status</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Partial">Partial</option>
+                  <option value="Transferred">Transferred</option>
+                </select>
+              </div>
+              
+              {/* Date From */}
+              <div className="flex-1 min-w-[160px]">
+                <label className="block text-xs font-medium text-gray-600 mb-1">From Date</label>
+                <input
+                  type="date"
+                  value={filterDateFrom}
+                  onChange={(e) => setFilterDateFrom(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                />
+              </div>
+              
+              {/* Date To */}
+              <div className="flex-1 min-w-[160px]">
+                <label className="block text-xs font-medium text-gray-600 mb-1">To Date</label>
+                <input
+                  type="date"
+                  value={filterDateTo}
+                  onChange={(e) => setFilterDateTo(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                />
+              </div>
+              
+              {/* Clear Filters Button */}
+              <button
+                onClick={() => {
+                  setFilterSite('');
+                  setFilterStatus('');
+                  setFilterDateFrom('');
+                  setFilterDateTo('');
+                }}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded transition-colors"
+              >
+                Clear Filters
+              </button>
+            </div>
           </div>
 
-          {deliveries.length > 0 ? (
+          {filteredDeliveries.length > 0 ? (
             <>
               <table className="min-w-full border text-sm">
                 <thead className="bg-orange-100">
@@ -426,12 +550,7 @@ export default function AdminUpcomingDeliveries() {
       {/* Details Modal */}
       {showDetailsModal && selectedDelivery && (
         <div 
-          className="fixed inset-0 flex items-center justify-center z-50 p-4"
-          style={{
-            background: 'rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)'
-          }}
+          className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black bg-opacity-50"
           onClick={closeModal}
         >
           <div 
@@ -439,16 +558,17 @@ export default function AdminUpcomingDeliveries() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+            <div className="sticky top-0 bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 flex justify-between items-center rounded-t-lg">
               <div>
-                <h2 className="text-xl font-semibold text-gray-800">
+                <h2 className="text-xl font-bold text-white">
                   Delivery Details - {selectedDelivery.st_id}
                 </h2>
-                <p className="text-sm text-gray-500">Transfer Number: {selectedDelivery.transfer_number}</p>
+                <p className="text-sm text-orange-100">Transfer Number: {selectedDelivery.transfer_number}</p>
               </div>
               <button
                 onClick={closeModal}
-                className="text-gray-500 hover:text-gray-700 transition-colors"
+                className="text-white hover:text-orange-100 transition-colors p-1 hover:bg-orange-600 rounded"
+                title="Close"
               >
                 <X size={24} />
               </button>
@@ -573,12 +693,12 @@ export default function AdminUpcomingDeliveries() {
             </div>
 
             {/* Modal Footer */}
-            <div className="sticky bottom-0 bg-gray-50 border-t px-6 py-4 flex justify-end gap-3">
+            <div className="sticky bottom-0 bg-white border-t-2 border-orange-100 px-6 py-4 flex justify-end gap-3 rounded-b-lg">
               {editing ? (
                 <>
                   <button
                     onClick={handleCancelEdit}
-                    className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition-colors flex items-center gap-2"
+                    className="px-5 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2 font-medium"
                   >
                     <X size={16} />
                     Cancel
@@ -586,7 +706,7 @@ export default function AdminUpcomingDeliveries() {
                   <button
                     onClick={handleSaveChanges}
                     disabled={saving}
-                    className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-5 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
                   >
                     {saving ? (
                       <>
@@ -605,13 +725,13 @@ export default function AdminUpcomingDeliveries() {
                 <>
                   <button
                     onClick={closeModal}
-                    className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition-colors"
+                    className="px-5 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
                   >
                     Close
                   </button>
                   <button
                     onClick={handleEdit}
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors flex items-center gap-2"
+                    className="px-5 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2 font-medium shadow-sm"
                   >
                     <Edit2 size={16} />
                     Edit

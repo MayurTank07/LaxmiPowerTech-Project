@@ -23,11 +23,17 @@ export default function AdminIntent() {
   const [allMaterials, setAllMaterials] = useState([]);
   const [sites, setSites] = useState([]);
   const [editingMaterialId, setEditingMaterialId] = useState(null);
+  
+  // ✅ Filter states
+  const [filterSite, setFilterSite] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
 
   useEffect(() => {
     fetchIndents(); // Changed from fetchPurchaseOrders
     fetchMaterialsAndSites();
-  }, [currentPage, search]);
+  }, [currentPage, search, filterSite, filterStatus, filterDateFrom, filterDateTo]);
 
   // Fetch materials and sites for editing
   const fetchMaterialsAndSites = async () => {
@@ -93,7 +99,45 @@ export default function AdminIntent() {
       );
       
       console.log(`📊 Admin: Fetched ${indentsData.length} indents + ${posData.length} POs = ${combinedData.length} total`);
-      setIndents(combinedData);
+      
+      // ✅ Apply filters client-side
+      let filteredData = combinedData;
+      
+      // Filter by site
+      if (filterSite) {
+        filteredData = filteredData.filter(item => 
+          item.deliverySite?.toLowerCase().includes(filterSite.toLowerCase())
+        );
+      }
+      
+      // Filter by status
+      if (filterStatus) {
+        filteredData = filteredData.filter(item => 
+          item.status?.toLowerCase() === filterStatus.toLowerCase()
+        );
+      }
+      
+      // Filter by date range
+      if (filterDateFrom) {
+        const fromDate = new Date(filterDateFrom);
+        fromDate.setHours(0, 0, 0, 0);
+        filteredData = filteredData.filter(item => {
+          const itemDate = new Date(item.createdAt);
+          itemDate.setHours(0, 0, 0, 0);
+          return itemDate >= fromDate;
+        });
+      }
+      
+      if (filterDateTo) {
+        const toDate = new Date(filterDateTo);
+        toDate.setHours(23, 59, 59, 999);
+        filteredData = filteredData.filter(item => {
+          const itemDate = new Date(item.createdAt);
+          return itemDate <= toDate;
+        });
+      }
+      
+      setIndents(filteredData);
       
       // Use max total pages from both sources
       const maxPages = Math.max(
@@ -519,17 +563,88 @@ export default function AdminIntent() {
         </div>
       ) : (
         <div className="bg-white shadow rounded-lg p-4 overflow-x-auto">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-700">
-              Purchase Orders Table ({indents.length} records)
-            </h2>
-            <input
-              type="text"
-              placeholder="Search by PO ID..."
-              className="border border-gray-300 rounded p-2 w-80 focus:ring-2 focus:ring-orange-400 text-sm"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          <div className="mb-4">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-lg font-semibold text-gray-700">
+                Purchase Orders Table ({indents.length} records)
+              </h2>
+              <input
+                type="text"
+                placeholder="Search by PO ID..."
+                className="border border-gray-300 rounded p-2 w-80 focus:ring-2 focus:ring-orange-400 text-sm"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            
+            {/* ✅ Filters Row */}
+            <div className="flex gap-3 items-end flex-wrap">
+              {/* Site Filter */}
+              <div className="flex-1 min-w-[200px]">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Filter by Site</label>
+                <select
+                  value={filterSite}
+                  onChange={(e) => setFilterSite(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white"
+                >
+                  <option value="">All Sites</option>
+                  {sites.map(site => (
+                    <option key={site} value={site}>{site}</option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Status Filter */}
+              <div className="flex-1 min-w-[180px]">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Filter by Status</label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white"
+                >
+                  <option value="">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="transferred">Transferred</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              
+              {/* Date From */}
+              <div className="flex-1 min-w-[160px]">
+                <label className="block text-xs font-medium text-gray-600 mb-1">From Date</label>
+                <input
+                  type="date"
+                  value={filterDateFrom}
+                  onChange={(e) => setFilterDateFrom(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                />
+              </div>
+              
+              {/* Date To */}
+              <div className="flex-1 min-w-[160px]">
+                <label className="block text-xs font-medium text-gray-600 mb-1">To Date</label>
+                <input
+                  type="date"
+                  value={filterDateTo}
+                  onChange={(e) => setFilterDateTo(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                />
+              </div>
+              
+              {/* Clear Filters Button */}
+              <button
+                onClick={() => {
+                  setFilterSite('');
+                  setFilterStatus('');
+                  setFilterDateFrom('');
+                  setFilterDateTo('');
+                }}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded transition-colors"
+              >
+                Clear Filters
+              </button>
+            </div>
           </div>
           {indents.length > 0 ? (
             <>
@@ -642,12 +757,7 @@ export default function AdminIntent() {
       {/* Details Modal */}
       {showDetailsModal && selectedIndent && (
         <div 
-          className="fixed inset-0 flex items-center justify-center z-50 p-4"
-          style={{
-            background: 'rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)'
-          }}
+          className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black bg-opacity-50"
           onClick={closeModal}
         >
           <div 
@@ -655,13 +765,14 @@ export default function AdminIntent() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-gray-800">
+            <div className="sticky top-0 bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 flex justify-between items-center rounded-t-lg">
+              <h2 className="text-xl font-bold text-white">
                 Purchase Order Details
               </h2>
               <button
                 onClick={closeModal}
-                className="text-gray-500 hover:text-gray-700 transition-colors"
+                className="text-white hover:text-orange-100 transition-colors p-1 hover:bg-orange-600 rounded"
+                title="Close"
               >
                 <X size={24} />
               </button>
@@ -671,7 +782,7 @@ export default function AdminIntent() {
             <div className="px-6 py-4">
               {/* Intent PO Information */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-700 mb-3 border-b pb-2">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b-2 border-orange-200">
                   Intent PO Information
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
@@ -730,8 +841,8 @@ export default function AdminIntent() {
 
               {/* Materials List */}
               <div className="mb-6">
-                <div className="flex justify-between items-center mb-3 border-b pb-2">
-                  <h3 className="text-lg font-semibold text-gray-700">
+                <div className="flex justify-between items-center mb-3 pb-2 border-b-2 border-orange-200">
+                  <h3 className="text-lg font-semibold text-gray-800">
                     Materials ({editing ? formData.materials?.length : selectedIndent.materials?.length || 0} items)
                   </h3>
                   {editing && (
@@ -781,7 +892,7 @@ export default function AdminIntent() {
                   selectedIndent.materials && selectedIndent.materials.length > 0 ? (
                     <div className="overflow-x-auto">
                       <table className="min-w-full border text-sm">
-                        <thead className="bg-gray-100">
+                        <thead className="bg-orange-50">
                           <tr>
                             <th className="border px-3 py-2 text-left font-medium text-gray-700">#</th>
                             <th className="border px-3 py-2 text-left font-medium text-gray-700">Item Name</th>
@@ -812,7 +923,7 @@ export default function AdminIntent() {
               {/* Attachments/Images */}
               {selectedIndent.attachments && selectedIndent.attachments.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-700 mb-3 border-b pb-2">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b-2 border-orange-200">
                     Attachments ({selectedIndent.attachments.length})
                   </h3>
                   <div className="grid grid-cols-1 gap-4">
@@ -904,12 +1015,12 @@ export default function AdminIntent() {
             </div>
 
             {/* Modal Footer */}
-            <div className="sticky bottom-0 bg-gray-50 border-t px-6 py-4 flex justify-end gap-3">
+            <div className="sticky bottom-0 bg-white border-t-2 border-orange-100 px-6 py-4 flex justify-end gap-3 rounded-b-lg">
               {editing ? (
                 <>
                   <button
                     onClick={handleCancelEdit}
-                    className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition-colors flex items-center gap-2"
+                    className="px-5 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2 font-medium"
                   >
                     <X size={16} />
                     Cancel
@@ -917,7 +1028,7 @@ export default function AdminIntent() {
                   <button
                     onClick={handleSaveEdit}
                     disabled={saving}
-                    className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-5 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm"
                   >
                     {saving ? (
                       <>
@@ -936,7 +1047,7 @@ export default function AdminIntent() {
                 <>
                   <button
                     onClick={handleEdit}
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors flex items-center gap-2"
+                    className="px-5 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2 font-medium shadow-sm"
                   >
                     <Edit2 size={16} />
                     Edit
