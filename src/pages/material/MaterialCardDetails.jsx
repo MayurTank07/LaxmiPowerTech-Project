@@ -50,7 +50,11 @@ export default function MaterialCardDetails() {
         .sort((a, b) => a.localeCompare(b));
       setCategories(uniqueCategories);
     } catch (err) {
-      // Error fetching materials and sites
+      console.error('Error fetching materials and sites:', err);
+      // Continue with empty arrays - non-blocking error
+      setSites([]);
+      setAllMaterials([]);
+      setCategories([]);
     }
   };
 
@@ -58,10 +62,10 @@ export default function MaterialCardDetails() {
     try {
       setLoading(true);
       const response = await siteTransferAPI.getById(id);
-      if (response.success) {
+      if (response.success && response.data) {
         setTransfer(response.data);
         // Convert materials to editable format
-        const editableMaterials = response.data.materials.map((m, idx) => {
+        const editableMaterials = (response.data.materials || []).map((m, idx) => {
           // Parse itemName to extract category, subCategory, subCategory1
           const parts = m.itemName?.split(' - ') || [];
           return {
@@ -77,17 +81,20 @@ export default function MaterialCardDetails() {
         });
         
         setFormData({
-          fromSite: response.data.fromSite,
-          toSite: response.data.toSite,
-          requestedBy: response.data.requestedBy,
-          status: response.data.status,
+          fromSite: response.data.fromSite || '',
+          toSite: response.data.toSite || '',
+          requestedBy: response.data.requestedBy || '',
+          status: response.data.status || 'pending',
           materials: editableMaterials,
-          remarks: response.data.materials[0]?.remarks || ''
+          remarks: response.data.materials?.[0]?.remarks || ''
         });
+      } else {
+        console.error('Invalid response from API:', response);
+        alert('Failed to load transfer details');
       }
     } catch (err) {
-      // Error fetching site transfer details
-      alert('Failed to load transfer details');
+      console.error('Error fetching site transfer details:', err);
+      alert('Failed to load transfer details. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -128,7 +135,11 @@ export default function MaterialCardDetails() {
     setEditing(false);
     setNewAttachments([]);
     setEditingMaterialId(null);
-    // Reset form data
+    // Reset form data - with null safety
+    if (!transfer || !transfer.materials) {
+      console.warn('Cannot reset form data: transfer is null');
+      return;
+    }
     const editableMaterials = transfer.materials.map((m, idx) => {
       const parts = m.itemName?.split(' - ') || [];
       return {
@@ -163,10 +174,7 @@ export default function MaterialCardDetails() {
       alert('Please select To Site');
       return;
     }
-    if (!formData.requestedBy.trim()) {
-      alert('Please select Requested By');
-      return;
-    }
+    // Requested By validation removed - field is read-only
     if (formData.materials.length === 0) {
       alert('Please add at least one material');
       return;
@@ -210,8 +218,8 @@ export default function MaterialCardDetails() {
         fetchTransferDetails();
       }
     } catch (err) {
-      // Error updating site transfer
-      alert('Failed to update site transfer');
+      console.error('Error updating site transfer:', err);
+      alert('Failed to update site transfer. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -230,8 +238,8 @@ export default function MaterialCardDetails() {
         navigate('/dashboard/material/site-transfers');
       }
     } catch (err) {
-      // Error deleting site transfer
-      alert('Failed to delete site transfer');
+      console.error('Error deleting site transfer:', err);
+      alert('Failed to delete site transfer. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -251,8 +259,8 @@ export default function MaterialCardDetails() {
         alert('Attachment deleted successfully');
       }
     } catch (err) {
-      // Error deleting attachment
-      alert('Failed to delete attachment');
+      console.error('Error deleting attachment:', err);
+      alert('Failed to delete attachment. Please try again.');
     } finally {
       setDeletingAttachment(null);
     }
@@ -418,58 +426,55 @@ export default function MaterialCardDetails() {
     );
   }
 
-  // Edit Form View (Full Screen)
+  // Edit Mode View
   if (editing) {
     return (
-      <div className="fixed inset-0 bg-gradient-to-b from-gray-50 to-gray-200 z-50 flex justify-center">
-        <div className="w-full max-w-[390px] h-full bg-white shadow-2xl overflow-y-auto relative pb-24">
-          {/* Form Content */}
-          <div className="bg-white">
-            {/* Header with Back Button */}
-            <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-200">
-              <button
-                onClick={handleCancelEdit}
-                className="p-0 hover:opacity-70 transition-opacity"
-                disabled={submitting}
-              >
-                <ArrowLeft size={20} className="text-gray-800" />
-              </button>
-              <h2 className="text-base font-medium text-gray-900">Edit Site Transfer</h2>
-            </div>
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50">
+      <div className="max-w-md mx-auto bg-white min-h-screen shadow-xl">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 pb-16 relative">
+          <div className="flex items-center justify-between px-6 pt-6">
+            <button
+              onClick={() => navigate(-1)}
+              className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+            >
+              <ArrowLeft size={24} />
+            </button>
+          </div>
 
-            {/* Form Content */}
-            <div className="px-4 py-4">
-              {/* Site Transfers Section */}
-              <h3 className="text-blue-600 font-semibold text-xs mb-3">Site Transfers</h3>
+          <div className="text-center pt-8">
+            <h1 className="text-white text-2xl font-bold mb-2">Intent Details</h1>
+            <p className="text-white/80 text-sm">{transfer.siteTransferId}</p>
+          </div>
+        </div>
 
-              {/* Site Transfer ID - Read Only */}
+        {/* Main Content */}
+        <div className="px-6 py-6 -mt-4 pb-32">
+
+          {/* Basic Information Section */}
+          <div className="bg-white rounded-lg border p-4 mb-4">
+            <h3 className="text-sm font-semibold text-gray-800 mb-4">Basic Information</h3>
+
+              {/* ST-ID - Read Only */}
               <div className="mb-3">
-                <label className="text-gray-700 text-xs mb-1.5 block">
-                  Site Transfer ID
-                </label>
+                <label className="text-xs text-gray-600 block mb-1.5">ST-ID</label>
                 <input
                   type="text"
                   value={transfer.siteTransferId}
                   disabled
-                  className="w-full bg-gray-100 border border-gray-300 rounded-md px-3 py-2.5 text-sm text-gray-500 cursor-not-allowed"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-500 cursor-not-allowed"
                 />
               </div>
 
-              {/* From Site */}
+              {/* Delivery Site (From Site) */}
               <div className="mb-3">
-                <label className="text-gray-700 text-xs mb-1.5 block">
-                  From Site <span className="text-red-500">*</span>
+                <label className="text-xs text-gray-600 block mb-1.5">
+                  Delivery Site <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={formData.fromSite}
                   onChange={(e) => setFormData({ ...formData, fromSite: e.target.value })}
-                  className="w-full bg-white border border-gray-300 rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-gray-400 appearance-none"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                    backgroundPosition: 'right 0.5rem center',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundSize: '1.5em 1.5em'
-                  }}
+                  className="w-full bg-gray-800 text-white border-0 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                   disabled={submitting}
                 >
                   <option value="">Select Site</option>
@@ -481,21 +486,15 @@ export default function MaterialCardDetails() {
                 </select>
               </div>
 
-              {/* Transfers To */}
+              {/* To Site */}
               <div className="mb-3">
-                <label className="text-gray-700 text-xs mb-1.5 block">
-                  Transfers To <span className="text-red-500">*</span>
+                <label className="text-xs text-gray-600 block mb-1.5">
+                  To Site <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={formData.toSite}
                   onChange={(e) => setFormData({ ...formData, toSite: e.target.value })}
-                  className="w-full bg-white border border-gray-300 rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-gray-400 appearance-none"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                    backgroundPosition: 'right 0.5rem center',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundSize: '1.5em 1.5em'
-                  }}
+                  className="w-full bg-gray-800 text-white border-0 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                   disabled={submitting}
                 >
                   <option value="">Select Site</option>
@@ -507,58 +506,55 @@ export default function MaterialCardDetails() {
                 </select>
               </div>
 
-              {/* Requested By */}
+              {/* Requested By - READ ONLY */}
               <div className="mb-3">
-                <label className="text-gray-700 text-xs mb-1.5 block">
-                  Requested By <span className="text-red-500">*</span>
-                </label>
+                <label className="text-xs text-gray-600 block mb-1.5">Requested By</label>
                 <input
                   type="text"
                   value={formData.requestedBy}
-                  onChange={(e) => setFormData({ ...formData, requestedBy: e.target.value })}
-                  placeholder="Enter name"
-                  className="w-full bg-white border border-gray-300 rounded-md px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-400"
-                  disabled={submitting}
+                  disabled
+                  className="w-full bg-gray-800 text-white border-0 rounded-lg px-3 py-2.5 text-sm cursor-not-allowed opacity-75"
                 />
               </div>
 
-              {/* Status */}
-              <div className="mb-4">
-                <label className="text-gray-700 text-xs mb-1.5 block">
-                  Status
-                </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full bg-white border border-gray-300 rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-gray-400 appearance-none"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                    backgroundPosition: 'right 0.5rem center',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundSize: '1.5em 1.5em'
-                  }}
-                  disabled={submitting}
-                >
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
-                  <option value="transferred">Transferred</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
+              {/* Request Date - Read Only */}
+              <div className="mb-3">
+                <label className="text-xs text-gray-600 block mb-1.5">Request Date</label>
+                <input
+                  type="text"
+                  value={formatDate(transfer.createdAt)}
+                  disabled
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-500 cursor-not-allowed"
+                />
               </div>
 
-              {/* Material Details Section */}
-              <h3 className="text-blue-600 font-semibold text-xs mb-3 mt-6">Material Details</h3>
+              {/* Remarks */}
+              <div className="mb-0">
+                <label className="text-xs text-gray-600 block mb-1.5">Remarks</label>
+                <textarea
+                  value={formData.remarks || ''}
+                  onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
+                  placeholder="Add remarks..."
+                  rows={3}
+                  className="w-full bg-gray-800 text-white border-0 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 placeholder-gray-500"
+                  disabled={submitting}
+                />
+              </div>
+            </div>
 
-              {/* Add Materials Button */}
-              <button
-                onClick={addMaterialRow}
-                className="w-full bg-white border-2 border-orange-500 text-orange-500 font-medium text-sm py-3 rounded-md mb-4 hover:bg-orange-50 transition"
-                disabled={submitting}
-              >
-                Add Materials +
-              </button>
-
-              {/* Dynamic Material Rows */}
+            {/* Materials Section */}
+            <div className="bg-white rounded-lg border p-4 mb-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-gray-800">Materials</h3>
+                <button
+                  onClick={addMaterialRow}
+                  className="text-orange-600 text-sm font-medium hover:text-orange-700 flex items-center gap-1"
+                  disabled={submitting}
+                >
+                  <Plus size={16} />
+                  Add Material
+                </button>
+              </div>
               {formData.materials.map((material, index) => (
                 <div key={material.id} className="mb-3">
                   <MaterialLineItem
@@ -577,153 +573,126 @@ export default function MaterialCardDetails() {
                   />
                 </div>
               ))}
+            </div>
 
-              {/* Additional Details Section */}
-              <h3 className="text-blue-600 font-semibold text-xs mb-3 mt-4">Additional Details</h3>
-
-              {/* Remarks */}
-              <div className="mb-4">
-                <label className="text-gray-700 text-xs mb-1.5 block">Remarks</label>
-                <textarea
-                  placeholder="Enter remarks..."
-                  value={formData.remarks}
-                  onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                  className="w-full bg-white border border-gray-300 rounded-md px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-400 h-24 resize-none"
-                  disabled={submitting}
-                />
-              </div>
-
+            {/* Attachments Section */}
+            <div className="bg-white rounded-lg border p-4 mb-4">
+              <h3 className="text-sm font-semibold text-gray-800 mb-4">Attachments</h3>
+              
               {/* Existing Attachments */}
               {transfer.attachments && transfer.attachments.length > 0 && (
-                <div className="mb-4">
-                  <h3 className="text-blue-600 font-semibold text-xs mb-3">Existing Attachments</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    {transfer.attachments.map((attachment, index) => {
-                      const baseURL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5002';
-                      const fileURL = attachment.startsWith('http') ? attachment : `${baseURL}/${attachment}`;
-                      const fileName = attachment.split('/').pop();
-                      const isImage = attachment.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i);
-                      
-                      return (
-                        <div key={index} className="relative border border-gray-300 rounded-md overflow-hidden bg-white">
-                          {isImage ? (
-                            <img 
-                              src={fileURL} 
-                              alt={fileName}
-                              className="w-full h-24 object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-24 flex items-center justify-center bg-gray-100">
-                              <span className="text-2xl">📎</span>
-                            </div>
-                          )}
-                          <button
-                            onClick={() => handleDeleteAttachment(index)}
-                            disabled={deletingAttachment === index}
-                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors disabled:opacity-50"
-                          >
-                            {deletingAttachment === index ? (
-                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                            ) : (
-                              <X size={12} />
-                            )}
-                          </button>
-                          <div className="p-1 bg-white border-t border-gray-200">
-                            <p className="text-xs text-gray-600 truncate">{fileName}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* New Attachments Section */}
-              <h3 className="text-blue-600 font-semibold text-xs mb-3">Add New Attachments</h3>
-              <label className="block w-full bg-gray-100 text-orange-500 font-medium text-sm py-3 rounded-md mb-4 text-center cursor-pointer hover:bg-gray-200 transition">
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  disabled={submitting}
-                />
-                Upload New Images
-              </label>
-
-              {/* Preview New Uploaded Images */}
-              {newAttachments.length > 0 && (
-                <div className="mb-6">
-                  <p className="text-xs text-gray-600 mb-2 font-medium">{newAttachments.length} new file(s) selected</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {newAttachments.map((file, idx) => {
-                      const previewURL = URL.createObjectURL(file);
-                      return (
-                        <div key={idx} className="relative border border-gray-300 rounded-md overflow-hidden bg-white">
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  {transfer.attachments.map((attachment, index) => {
+                    const baseURL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5002';
+                    const fileURL = attachment.startsWith('http') ? attachment : `${baseURL}/${attachment}`;
+                    const fileName = attachment.split('/').pop();
+                    const isImage = attachment.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i);
+                    
+                    return (
+                      <div key={index} className="relative border border-gray-300 rounded-lg overflow-hidden bg-white">
+                        {isImage ? (
                           <img 
-                            src={previewURL} 
-                            alt={file.name}
-                            className="w-full h-24 object-cover"
+                            src={fileURL} 
+                            alt={fileName}
+                            className="w-full h-32 object-cover"
                             onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.nextSibling.style.display = 'flex';
+                              e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23f3f4f6" width="100" height="100"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="40"%3E🖼️%3C/text%3E%3C/svg%3E';
                             }}
                           />
-                          <div className="w-full h-24 hidden items-center justify-center bg-gray-100">
-                            <span className="text-2xl">📎</span>
+                        ) : (
+                          <div className="w-full h-32 flex items-center justify-center bg-gray-100">
+                            <span className="text-4xl">📎</span>
                           </div>
-                          <button
-                            onClick={() => removeNewAttachment(idx)}
-                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                            type="button"
-                          >
-                            <X size={12} />
-                          </button>
-                          <div className="p-1 bg-white border-t border-gray-200">
-                            <p className="text-xs text-gray-600 truncate">{file.name}</p>
-                          </div>
+                        )}
+                        
+                        <button
+                          onClick={() => handleDeleteAttachment(index)}
+                          disabled={deletingAttachment === index}
+                          className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                          title="Delete attachment"
+                        >
+                          {deletingAttachment === index ? (
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                          ) : (
+                            <Trash2 size={12} />
+                          )}
+                        </button>
+                        
+                        <div className="p-2 bg-white border-t border-gray-200">
+                          <p className="text-xs text-gray-600 truncate">{fileName}</p>
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
-              {/* Spacer for fixed buttons */}
-              <div className="h-4"></div>
-            </div>
-            
-            {/* Fixed Action Buttons at Bottom */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
-              <div className="max-w-[390px] mx-auto px-4 py-3">
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleCancelEdit}
-                    className="flex-1 bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-300 transition-colors"
+              {/* New Attachments Upload */}
+              <div>
+                <label className="block">
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handleFileUpload}
+                    className="hidden"
                     disabled={submitting}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSaveChanges}
-                    className="flex-1 bg-orange-500 text-white font-semibold py-3 rounded-lg hover:bg-orange-600 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
-                    disabled={submitting}
-                  >
-                    {submitting ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        Saving...
-                      </span>
-                    ) : (
-                      'Save'
-                    )}
-                  </button>
-                </div>
+                  />
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-orange-500 transition-colors">
+                    <Upload size={24} className="mx-auto mb-2 text-gray-400" />
+                    <p className="text-sm text-gray-600">Click to upload files</p>
+                  </div>
+                </label>
+
+                {newAttachments.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {newAttachments.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
+                        <span className="text-sm text-gray-700 truncate flex-1">{file.name}</span>
+                        <button
+                          onClick={() => removeNewAttachment(index)}
+                          className="ml-2 p-1 text-red-500 hover:bg-red-50 rounded"
+                          disabled={submitting}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+            </div>
+
+            {/* Spacer for fixed buttons */}
+            <div className="h-4"></div>
+          </div>
+          
+          {/* Fixed Bottom Buttons */}
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4 z-50">
+            <div className="max-w-md mx-auto flex gap-3">
+              <button
+                onClick={handleCancelEdit}
+                className="flex-1 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveChanges}
+                className="flex-1 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Saving...
+                  </span>
+                ) : (
+                  'Save'
+                )}
+              </button>
             </div>
           </div>
         </div>

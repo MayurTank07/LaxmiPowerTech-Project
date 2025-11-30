@@ -500,8 +500,8 @@ export default function IntentCardDetails() {
                     <input
                       type="text"
                       value={formData.requestedBy}
-                      onChange={(e) => setFormData({ ...formData, requestedBy: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg text-sm"
+                      disabled
+                      className="w-full px-3 py-2 bg-gray-800 text-white border-0 rounded-lg text-sm cursor-not-allowed opacity-75"
                     />
                   ) : (
                     <p className="font-medium text-gray-900">{purchaseOrder.requestedBy}</p>
