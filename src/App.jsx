@@ -146,6 +146,8 @@ function App() {
         <Route path="/material/intent-details/:id" element={<IntentCardDetails />} />
         <Route path="/material/upload-photo" element={<UploadPhoto />} />
         <Route path="/material/transfer" element={<Material activeTab="transfer" />} />
+        <Route path="/material/transfer/new" element={<MaterialTransferForm />} />
+        <Route path="/material/transfer/:id" element={<MaterialCardDetails />} />
         <Route path="/material/deliveries" element={<Material activeTab="deliveries" />} />
         <Route path="/material/grn" element={<Material activeTab="grn" />} />
 
