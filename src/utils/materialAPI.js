@@ -193,6 +193,26 @@ export const upcomingDeliveryAPI = {
     const response = await axios.delete('/material/upcoming-deliveries/all');
     return response.data;
   },
+
+  // ✅ Upload delivery receipt images
+  uploadReceipts: async (id, files) => {
+    const formData = new FormData();
+    files.forEach(file => formData.append('receipts', file));
+    const response = await axios.post(
+      `/material/upcoming-deliveries/${id}/upload-receipts`, 
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+    return response.data;
+  },
+
+  // ✅ Delete delivery receipt attachment
+  deleteAttachment: async (id, attachmentIndex) => {
+    const response = await axios.delete(
+      `/material/upcoming-deliveries/${id}/attachments/${attachmentIndex}`
+    );
+    return response.data;
+  },
   // ✅ Migration endpoint to sync existing Intent POs
   migrateSync: async () => {
     const response = await axios.post('/material/upcoming-deliveries/migrate-sync');

@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { upcomingDeliveryAPI, indentAPI, purchaseOrderAPI, branchesAPI } from "../../utils/materialAPI";
-import { Eye, Trash2, X, Edit2, Save } from "lucide-react";
+import { Eye, Trash2, X, Edit2, Save, Upload, Image as ImageIcon } from "lucide-react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import axios from "../../utils/axios";
 
@@ -18,6 +18,9 @@ export default function AdminUpcomingDeliveries() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [relatedIndent, setRelatedIndent] = useState(null);
+  const [uploadingReceipt, setUploadingReceipt] = useState(false);
+  const [deletingAttachment, setDeletingAttachment] = useState(null);
+  const fileInputRef = useRef(null);
   
   // ✅ Filter states
   const [filterSite, setFilterSite] = useState('');
@@ -325,6 +328,71 @@ export default function AdminUpcomingDeliveries() {
       toast.style.opacity = '0';
       setTimeout(() => toast.remove(), 300);
     }, 3000);
+  };
+
+  // ✅ UPLOAD DELIVERY RECEIPT IMAGES
+  const handleUploadReceipts = async (files) => {
+    if (!files || files.length === 0) return;
+    
+    try {
+      setUploadingReceipt(true);
+      console.log(`📤 Uploading ${files.length} receipt(s)...`);
+      
+      const response = await upcomingDeliveryAPI.uploadReceipts(selectedDelivery._id, Array.from(files));
+      
+      if (response.success) {
+        // Update selected delivery with new data
+        setSelectedDelivery(response.data);
+        
+        // Update deliveries list
+        setDeliveries(prev => 
+          prev.map(d => d._id === selectedDelivery._id ? response.data : d)
+        );
+        
+        showToast(`${files.length} receipt(s) uploaded successfully!`, 'success');
+        
+        // Clear file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    } catch (err) {
+      console.error('❌ Upload receipt error:', err);
+      showToast(err.response?.data?.message || 'Failed to upload receipts', 'error');
+    } finally {
+      setUploadingReceipt(false);
+    }
+  };
+
+  // ✅ DELETE ATTACHMENT
+  const handleDeleteAttachment = async (attachmentIndex) => {
+    if (!window.confirm('Are you sure you want to delete this attachment?')) {
+      return;
+    }
+    
+    try {
+      setDeletingAttachment(attachmentIndex);
+      console.log(`🗑️ Deleting attachment ${attachmentIndex}...`);
+      
+      const response = await upcomingDeliveryAPI.deleteAttachment(selectedDelivery._id, attachmentIndex);
+      
+      if (response.success) {
+        // Update selected delivery with new data
+        setSelectedDelivery(response.data);
+        
+        // Update deliveries list
+        setDeliveries(prev => 
+          prev.map(d => d._id === selectedDelivery._id ? response.data : d)
+        );
+        
+        showToast('Attachment deleted successfully', 'success');
+      }
+    } catch (err) {
+      console.error('❌ Delete attachment error:', err);
+      showToast(err.response?.data?.message || 'Failed to delete attachment', 'error');
+    } finally {
+      setDeletingAttachment(null);
+    }
   };
 
   // Delete All handler
@@ -755,6 +823,102 @@ export default function AdminUpcomingDeliveries() {
                     </table>
                   </div>
                 </div>
+              </div>
+
+              {/* ✅ ATTACHMENTS SECTION - Intent PO Images & Delivery Receipts */}
+              <div className="mb-6">
+                <div className="flex justify-between items-center mb-3 pb-2 border-b-2 border-orange-200">
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Attachments ({selectedDelivery.attachments?.length || 0})
+                  </h3>
+                  <label className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors cursor-pointer flex items-center gap-2 text-sm font-medium">
+                    <Upload size={16} />
+                    {uploadingReceipt ? 'Uploading...' : 'Upload Receipt'}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploadingReceipt}
+                      onChange={(e) => handleUploadReceipts(e.target.files)}
+                    />
+                  </label>
+                </div>
+                
+                {selectedDelivery.attachments && selectedDelivery.attachments.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    {selectedDelivery.attachments.map((attachment, index) => {
+                      // ✅ Handle both old string format and new Cloudinary object format
+                      const attachmentUrl = typeof attachment === 'string' ? attachment : attachment.url;
+                      const baseURL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5002';
+                      const fileURL = attachmentUrl.startsWith('http') ? attachmentUrl : `${baseURL}${attachmentUrl}`;
+                      const fileName = attachmentUrl.split('/').pop();
+                      const isImage = attachmentUrl.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i);
+                      
+                      return (
+                        <div key={index} className="border rounded-lg overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
+                          <div className="relative">
+                            {/* Image Thumbnail */}
+                            {isImage ? (
+                              <img 
+                                src={fileURL} 
+                                alt={fileName}
+                                className="w-full h-48 object-cover cursor-pointer"
+                                onClick={() => window.open(fileURL, '_blank')}
+                                onError={(e) => {
+                                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23f3f4f6" width="100" height="100"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="40"%3E🖼️%3C/text%3E%3C/svg%3E';
+                                }}
+                              />
+                            ) : (
+                              <div className="w-full h-48 flex items-center justify-center bg-gray-100">
+                                <span className="text-6xl">📎</span>
+                              </div>
+                            )}
+                            
+                            {/* Delete Button Overlay */}
+                            <button
+                              onClick={() => handleDeleteAttachment(index)}
+                              disabled={deletingAttachment === index}
+                              className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                              title="Delete attachment"
+                            >
+                              {deletingAttachment === index ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              ) : (
+                                <Trash2 size={16} />
+                              )}
+                            </button>
+                          </div>
+                          
+                          {/* File Info */}
+                          <div className="p-3 bg-white border-t border-gray-200">
+                            <p className="text-sm font-medium text-gray-900 truncate">{fileName}</p>
+                            <div className="flex justify-between items-center mt-2">
+                              <p className="text-xs text-gray-500">
+                                {isImage ? 'Image' : 'File'} • Attachment {index + 1}
+                              </p>
+                              <a
+                                href={fileURL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                              >
+                                View Full
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                    <ImageIcon size={48} className="mx-auto text-gray-400 mb-2" />
+                    <p className="text-gray-500 text-sm">No attachments</p>
+                    <p className="text-gray-400 text-xs mt-1">Upload delivery receipt images here</p>
+                  </div>
+                )}
               </div>
             </div>
 
