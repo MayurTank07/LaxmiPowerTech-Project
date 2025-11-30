@@ -219,7 +219,12 @@ const DashboardLayout = ({ children, title }) => {
                               : "text-white/80 hover:bg-white/20 hover:text-white"
                             }`
                           }
-                          onClick={() => setSidebarOpen(false)}
+                          onClick={() => {
+                            // Only close mobile sidebar, keep parent dropdown open
+                            setSidebarOpen(false);
+                            // Keep Material/Attendance dropdown open when clicking within same menu
+                            // No need to close the parent dropdown
+                          }}
                         >
                           {sub.label}
                         </NavLink>
