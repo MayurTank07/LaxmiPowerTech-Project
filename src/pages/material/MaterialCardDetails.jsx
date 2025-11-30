@@ -708,198 +708,185 @@ export default function MaterialCardDetails() {
     );
   }
 
-  // Read-Only View
+  // Read-Only View - Matching Intent PO Mobile Layout
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-24">
-      {/* Header with Gradient - Matching Intent PO Style */}
-      <div className="bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg sticky top-0 z-10">
-        <div className="px-4 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50">
+      {/* Container with consistent mobile width - EXACTLY like Intent Details */}
+      <div className="max-w-md mx-auto min-h-screen bg-white shadow-xl">
+        {/* Header with Gradient - EXACTLY matching Intent PO */}
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 pt-6 pb-8 rounded-b-3xl shadow-lg relative">
           <button
+            className="absolute top-6 left-6 text-white flex items-center gap-2 hover:bg-white/20 px-3 py-1.5 rounded-full transition-all"
             onClick={() => navigate('/dashboard/material/site-transfers')}
-            className="p-2 hover:bg-white/20 rounded-full transition-colors"
           >
-            <ArrowLeft size={20} className="text-white" />
+            <ArrowLeft size={16} />
+            <span className="text-sm font-medium">Back</span>
           </button>
-          <h1 className="text-lg font-bold text-white">Transfer Details</h1>
-          <div className="w-8" /> {/* Spacer for alignment */}
-        </div>
-      </div>
 
-      {/* Content */}
-      <div className="px-4 pt-4 space-y-4">
-        {/* Header Card - Elevated Design */}
-        <div className="bg-white rounded-xl shadow-md p-4 border border-gray-200">
-          <div className="flex justify-between items-start mb-3">
-            <div>
-              <p className="text-xs font-medium text-gray-500 mb-1">Site Transfer ID</p>
-              <p className="text-lg font-bold text-gray-900">{transfer.siteTransferId}</p>
-            </div>
-            <span className={`px-3 py-1.5 text-xs font-semibold rounded-full shadow-sm ${getStatusColor(transfer.status)}`}>
-              {transfer.status?.charAt(0).toUpperCase() + transfer.status?.slice(1)}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <span className="font-medium">Created:</span>
-            <span>{formatDate(transfer.createdAt)}</span>
+          <div className="text-center pt-8">
+            <h1 className="text-white text-2xl font-bold mb-2">Transfer Details</h1>
+            <p className="text-white/80 text-sm">{transfer.siteTransferId}</p>
           </div>
         </div>
 
-        {/* Transfer Info Card */}
-        <div className="bg-white rounded-xl shadow-md p-4 border border-gray-200">
-          <h2 className="text-sm font-bold text-gray-900 mb-4 pb-2 border-b border-orange-200">Transfer Information</h2>
-          
-          <div className="space-y-3">
-            {/* From Site */}
-            <div className="bg-gradient-to-r from-gray-50 to-white rounded-lg p-3 border border-gray-200">
-              <label className="text-xs font-semibold text-gray-600 block mb-1">From Site</label>
-              <p className="text-sm font-bold text-gray-900">{transfer.fromSite}</p>
-            </div>
-
-            {/* To Site */}
-            <div className="bg-gradient-to-r from-gray-50 to-white rounded-lg p-3 border border-gray-200">
-              <label className="text-xs font-semibold text-gray-600 block mb-1">To Site</label>
-              <p className="text-sm font-bold text-gray-900">{transfer.toSite}</p>
-            </div>
-
-            {/* Requested By */}
-            <div className="bg-gradient-to-r from-gray-50 to-white rounded-lg p-3 border border-gray-200">
-              <label className="text-xs font-semibold text-gray-600 block mb-1">Requested By</label>
-              <p className="text-sm font-bold text-gray-900">{transfer.requestedBy}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Materials Card */}
-        <div className="bg-white rounded-xl shadow-md p-4 border border-gray-200">
-          <h2 className="text-sm font-bold text-gray-900 mb-4 pb-2 border-b border-orange-200">
-            Materials <span className="text-orange-600">({transfer.materials?.length || 0})</span>
-          </h2>
-          
-          <div className="space-y-3">
-            {transfer.materials?.map((material, index) => (
-              <div key={index} className="bg-gradient-to-br from-orange-50 to-white border-2 border-orange-200 rounded-lg p-3 shadow-sm">
-                <div className="flex items-start justify-between mb-2">
-                  <p className="text-sm font-bold text-gray-900 flex-1">{material.itemName}</p>
-                  <span className="ml-2 px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full">#{index + 1}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3 mt-2">
-                  <div className="bg-white rounded-md p-2 border border-gray-200">
-                    <span className="text-xs font-medium text-gray-600 block">Quantity</span>
-                    <span className="text-sm font-bold text-gray-900">{material.quantity}</span>
-                  </div>
-                  <div className="bg-white rounded-md p-2 border border-gray-200">
-                    <span className="text-xs font-medium text-gray-600 block">UOM</span>
-                    <span className="text-sm font-bold text-gray-900">{material.uom}</span>
-                  </div>
-                </div>
-                {material.remarks && (
-                  <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
-                    <span className="text-xs font-semibold text-blue-700 block mb-1">Remarks:</span>
-                    <p className="text-xs text-blue-900">{material.remarks}</p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Attachments Card */}
-        {transfer.attachments && transfer.attachments.length > 0 && (
-          <div className="bg-white rounded-xl shadow-md p-4 border border-gray-200">
-            <h2 className="text-sm font-bold text-gray-900 mb-4 pb-2 border-b border-orange-200">
-              Attachments <span className="text-orange-600">({transfer.attachments.length})</span>
-            </h2>
-            
+        {/* Main Content - EXACTLY matching Intent PO layout */}
+        <div className="px-6 py-6 -mt-4 pb-24">
+          {/* Basic Information Card - Matching Intent Details */}
+          <div className="bg-white rounded-lg border p-4 space-y-3 mb-4">
+            <h3 className="text-sm font-semibold text-gray-800 mb-3">Basic Information</h3>
             <div className="grid grid-cols-2 gap-3">
-              {transfer.attachments.map((attachment, index) => {
-                const baseURL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5002';
-                const fileURL = attachment.startsWith('http') ? attachment : `${baseURL}/${attachment}`;
-                const fileName = attachment.split('/').pop();
-                const isImage = attachment.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i);
-                
-                return (
-                  <div key={index} className="relative border-2 border-gray-300 rounded-lg overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
-                    {isImage ? (
-                      <img 
-                        src={fileURL} 
-                        alt={fileName}
-                        className="w-full h-32 object-cover"
-                        onError={(e) => {
-                          e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23f3f4f6" width="100" height="100"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="40"%3E🖼️%3C/text%3E%3C/svg%3E';
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-32 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                        <span className="text-4xl">📎</span>
+              <div>
+                <label className="text-xs text-gray-600">ST-ID</label>
+                <p className="font-medium text-gray-900">{transfer.siteTransferId}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-600">Status</label>
+                <span className={`inline-block px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(transfer.status)}`}>
+                  {transfer.status?.charAt(0).toUpperCase() + transfer.status?.slice(1)}
+                </span>
+              </div>
+              <div>
+                <label className="text-xs text-gray-600">From Site</label>
+                <p className="font-medium text-gray-900">{transfer.fromSite}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-600">To Site</label>
+                <p className="font-medium text-gray-900">{transfer.toSite}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-600">Requested By</label>
+                <p className="font-medium text-gray-900">{transfer.requestedBy}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-600">Request Date</label>
+                <p className="font-medium text-gray-900">{formatDate(transfer.createdAt)}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Materials Section - Matching Intent Details */}
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold text-gray-800 mb-3">Materials</h3>
+            <div className="space-y-3">
+              {transfer.materials?.map((material, index) => (
+                <div key={index} className="bg-white rounded-lg border p-3">
+                  <div className="space-y-2">
+                    {/* Material Info */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="text-xs text-gray-500 mb-1">Material #{index + 1}</div>
+                        <div className="text-sm font-medium text-gray-900">{material.itemName}</div>
+                      </div>
+                    </div>
+
+                    {/* Quantity and UOM */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <label className="text-xs text-gray-500 block mb-1">Quantity</label>
+                        <div className="px-3 py-2 bg-gray-100 rounded text-sm font-medium text-gray-700">
+                          {material.quantity}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-xs text-gray-500 block mb-1">UOM</label>
+                        <div className="px-3 py-2 bg-gray-100 rounded text-sm font-medium text-gray-700">
+                          {material.uom}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Remarks */}
+                    {material.remarks && (
+                      <div>
+                        <label className="text-xs text-gray-500 block mb-1">Remarks</label>
+                        <p className="text-sm text-gray-700">{material.remarks}</p>
                       </div>
                     )}
-                    
-                    {/* Delete Button */}
-                    <button
-                      onClick={() => handleDeleteAttachment(index)}
-                      disabled={deletingAttachment === index}
-                      className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                      title="Delete attachment"
-                    >
-                      {deletingAttachment === index ? (
-                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                      ) : (
-                        <Trash2 size={12} />
-                      )}
-                    </button>
-                    
-                    {/* File Name */}
-                    <div className="p-2 bg-gradient-to-r from-gray-50 to-white border-t border-gray-200">
-                      <p className="text-xs font-medium text-gray-700 truncate">{fileName}</p>
-                    </div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           </div>
-        )}
-      </div>
 
-      {/* Fixed Action Buttons at Bottom - Mobile Snapshot Style */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
-        <div className="max-w-[390px] mx-auto px-4 py-3">
-          {editing ? (
-            <div className="flex gap-3">
-              <button
-                onClick={handleCancelEdit}
-                className="flex-1 bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveChanges}
-                className="flex-1 bg-orange-500 text-white font-semibold py-3 rounded-lg hover:bg-orange-600 transition-colors shadow-md"
-              >
-                Save
-              </button>
-            </div>
-          ) : (
-            <div className="flex gap-3">
-              <button
-                onClick={() => navigate('/dashboard/material/site-transfers')}
-                className="flex-1 bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Back
-              </button>
-              <button
-                onClick={handleEdit}
-                className="flex-1 bg-orange-500 text-white font-semibold py-3 rounded-lg hover:bg-orange-600 transition-colors shadow-md"
-              >
-                Edit
-              </button>
-              <button
-                onClick={handleDelete}
-                className="flex-1 bg-red-500 text-white font-semibold py-3 rounded-lg hover:bg-red-600 transition-colors shadow-md"
-              >
-                Delete
-              </button>
+          {/* Attachments Section - Matching Intent Details */}
+          {transfer.attachments && transfer.attachments.length > 0 && (
+            <div className="mb-4">
+              <h3 className="text-sm font-semibold text-gray-800 mb-3">
+                Attachments ({transfer.attachments.length})
+              </h3>
+              
+              <div className="grid grid-cols-2 gap-3">
+                {transfer.attachments.map((attachment, index) => {
+                  const baseURL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5002';
+                  const fileURL = attachment.startsWith('http') ? attachment : `${baseURL}/${attachment}`;
+                  const fileName = attachment.split('/').pop();
+                  const isImage = attachment.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i);
+                  
+                  return (
+                    <div key={index} className="relative border border-gray-300 rounded-lg overflow-hidden bg-white">
+                      {isImage ? (
+                        <img 
+                          src={fileURL} 
+                          alt={fileName}
+                          className="w-full h-32 object-cover"
+                          onError={(e) => {
+                            e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23f3f4f6" width="100" height="100"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="40"%3E🖼️%3C/text%3E%3C/svg%3E';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-32 flex items-center justify-center bg-gray-100">
+                          <span className="text-4xl">📎</span>
+                        </div>
+                      )}
+                      
+                      {/* Delete Button */}
+                      <button
+                        onClick={() => handleDeleteAttachment(index)}
+                        disabled={deletingAttachment === index}
+                        className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                        title="Delete attachment"
+                      >
+                        {deletingAttachment === index ? (
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                        ) : (
+                          <Trash2 size={12} />
+                        )}
+                      </button>
+                      
+                      {/* File Name */}
+                      <div className="p-2 bg-white border-t border-gray-200">
+                        <p className="text-xs text-gray-600 truncate">{fileName}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
+        </div>
+
+        {/* Fixed Bottom Buttons - EXACTLY matching Intent Details */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4 z-50">
+          <div className="max-w-md mx-auto flex gap-3">
+            <button
+              onClick={() => navigate('/dashboard/material/site-transfers')}
+              className="flex-1 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+            >
+              Back
+            </button>
+            <button
+              onClick={handleEdit}
+              className="flex-1 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
+            >
+              Edit
+            </button>
+            <button
+              onClick={handleDelete}
+              className="flex-1 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
+            >
+              Delete
+            </button>
+          </div>
         </div>
       </div>
     </div>
