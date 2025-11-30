@@ -105,46 +105,48 @@ export default function MaterialLineItem({
 }) {
   const isComplete = material.category && material.subCategory && material.subCategory1 && material.subCategory2 && material.quantity;
 
-  // Collapsed Card View - Matching Snapshot 2
+  // Collapsed Card View
   if (!isEditing && isComplete) {
     return (
-      <div className="bg-white border border-gray-300 rounded-lg p-4 relative animate-fade-in">
-        <div className="flex items-start justify-between gap-3">
+      <div className="bg-white border border-gray-300 rounded-md p-3 relative animate-fade-in shadow-sm">
+        <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-sm font-semibold text-gray-900 mb-3">Material #{index + 1}</p>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+            <p className="text-xs text-gray-700 font-medium mb-2">Material #{index + 1}</p>
+            <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
-                <span className="text-gray-500 text-xs">Category:</span>
-                <p className="text-gray-900 font-medium">{material.category}</p>
+                <span className="text-gray-500">Category:</span>
+                <p className="text-gray-900 font-medium truncate">{material.category}</p>
               </div>
               <div>
-                <span className="text-gray-500 text-xs">Sub Category:</span>
-                <p className="text-gray-900 font-medium">{material.subCategory}</p>
+                <span className="text-gray-500">Sub Category:</span>
+                <p className="text-gray-900 font-medium truncate">{material.subCategory}</p>
               </div>
               <div>
-                <span className="text-gray-500 text-xs">Sub Category 1:</span>
-                <p className="text-gray-900 font-medium">{material.subCategory1}</p>
+                <span className="text-gray-500">Sub Category 1:</span>
+                <p className="text-gray-900 font-medium truncate">{material.subCategory1}</p>
               </div>
               <div>
-                <span className="text-gray-500 text-xs">Quantity:</span>
+                <span className="text-gray-500">Sub Category 2:</span>
+                <p className="text-gray-900 font-medium truncate">{material.subCategory2}</p>
+              </div>
+              <div>
+                <span className="text-gray-500">Quantity:</span>
                 <p className="text-gray-900 font-medium">{material.quantity}</p>
               </div>
             </div>
           </div>
-          <div className="flex gap-2 flex-shrink-0 pt-1">
+          <div className="flex gap-1 flex-shrink-0">
             <button
               onClick={onEdit}
               className="p-1.5 hover:bg-gray-100 rounded transition-colors"
-              title="Edit material"
             >
-              <Edit2 size={18} className="text-gray-600" />
+              <Edit2 size={16} className="text-gray-600" />
             </button>
             <button
               onClick={onRemove}
-              className="p-1.5 hover:bg-red-50 rounded transition-colors"
-              title="Remove material"
+              className="p-1.5 hover:bg-gray-100 rounded transition-colors"
             >
-              <X size={18} className="text-red-500" />
+              <X size={16} className="text-red-500" />
             </button>
           </div>
         </div>
@@ -152,40 +154,39 @@ export default function MaterialLineItem({
     );
   }
 
-  // Expanded Edit View - Matching Snapshot 3
+  // Expanded Edit View
   return (
-    <div className="bg-white border border-gray-300 rounded-lg p-4 relative animate-slide-down">
+    <div className="bg-gray-50 border border-gray-300 rounded-md p-4 relative animate-slide-down">
       {/* Remove Button */}
       <button
         onClick={onRemove}
-        className="absolute top-4 right-4 text-red-500 hover:text-red-700 z-10"
-        title="Remove material"
+        className="absolute top-3 right-3 text-red-500 hover:text-red-700 z-10"
       >
-        <X size={18} />
+        <X size={16} />
       </button>
 
-      <p className="text-sm font-semibold text-gray-900 mb-4">Material #{index + 1}</p>
+      <p className="text-xs text-gray-700 font-medium mb-3">Material #{index + 1}</p>
 
       {/* Row 1: Category and Sub Category */}
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
-          <label className="text-gray-700 text-sm mb-1.5 block">Category</label>
+          <label className="text-gray-700 text-xs mb-1.5 block">Category</label>
           <SearchableDropdown
             value={material.category}
             onChange={(value) => onUpdate('category', value)}
             options={categories}
-            placeholder="Select or type..."
+            placeholder="Select or type category..."
             disabled={loading}
           />
         </div>
 
         <div>
-          <label className="text-gray-700 text-sm mb-1.5 block">Sub Category</label>
+          <label className="text-gray-700 text-xs mb-1.5 block">Sub Category</label>
           <SearchableDropdown
             value={material.subCategory}
             onChange={(value) => onUpdate('subCategory', value)}
             options={material.category ? getSubcategories(material.category) : []}
-            placeholder="Select or type..."
+            placeholder="Select or type subcategory..."
             disabled={!material.category || loading}
           />
         </div>
@@ -194,48 +195,48 @@ export default function MaterialLineItem({
       {/* Row 2: Sub Category 1 and Sub Category 2 */}
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
-          <label className="text-gray-700 text-sm mb-1.5 block">Sub Category 1</label>
+          <label className="text-gray-700 text-xs mb-1.5 block">Sub Category 1</label>
           <SearchableDropdown
             value={material.subCategory1}
             onChange={(value) => onUpdate('subCategory1', value)}
             options={material.subCategory ? getSubSubcategories(material.category, material.subCategory) : []}
-            placeholder="Select or type..."
+            placeholder="Select or type sub-category..."
             disabled={!material.subCategory || loading}
           />
         </div>
 
         <div>
-          <label className="text-gray-700 text-sm mb-1.5 block">Sub Category 2</label>
+          <label className="text-gray-700 text-xs mb-1.5 block">Sub Category 2</label>
           <SearchableDropdown
             value={material.subCategory2}
             onChange={(value) => onUpdate('subCategory2', value)}
             options={material.subCategory1 ? getSubSubSubcategories(material.category, material.subCategory, material.subCategory1) : []}
-            placeholder="Select or type..."
+            placeholder="Select or type sub-category..."
             disabled={!material.subCategory1 || loading}
           />
         </div>
       </div>
 
       {/* Row 3: Quantity */}
-      <div className="grid grid-cols-2 gap-3 mb-3">
+      <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-gray-700 text-sm mb-1.5 block">Quantity</label>
+          <label className="text-gray-700 text-xs mb-1.5 block">Quantity</label>
           <input
             type="number"
             placeholder="Enter qty"
             value={material.quantity}
             onChange={(e) => onUpdate('quantity', e.target.value)}
-            className="w-full bg-white border border-gray-300 rounded-md px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+            className="w-full bg-white border border-gray-300 rounded-md px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-400"
             min="1"
           />
         </div>
       </div>
 
-      {/* Done Editing Button (only show if material is complete) */}
+      {/* Collapse Button (only show if material is complete) */}
       {isComplete && (
         <button
           onClick={onDoneEditing}
-          className="mt-3 w-full text-sm text-orange-500 font-semibold hover:text-orange-600 transition-colors py-2"
+          className="mt-3 w-full text-xs text-orange-500 font-medium hover:text-orange-600 transition-colors"
         >
           ✓ Done editing
         </button>
