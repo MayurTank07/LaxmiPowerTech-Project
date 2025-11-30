@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { upcomingDeliveryAPI } from "../../utils/materialAPI";
-import { Search } from "lucide-react";
+import { upcomingDeliveryAPI, branchesAPI } from "../../utils/materialAPI";
+import { Search, Filter } from "lucide-react";
 
 export default function UpcomingDeliveries({ isTabView = false }) {
     const navigate = useNavigate();
@@ -10,10 +10,31 @@ export default function UpcomingDeliveries({ isTabView = false }) {
     const [error, setError] = useState(null);
     const [search, setSearch] = useState("");
     const [typeFilter, setTypeFilter] = useState("ALL"); // ALL, ST, PO
+    
+    // ✅ Additional filter states
+    const [showFilters, setShowFilters] = useState(false);
+    const [filterSite, setFilterSite] = useState('');
+    const [filterStatus, setFilterStatus] = useState('');
+    const [filterDateFrom, setFilterDateFrom] = useState('');
+    const [filterDateTo, setFilterDateTo] = useState('');
+    const [sites, setSites] = useState([]);
 
     useEffect(() => {
         fetchDeliveries();
+        fetchSites();
     }, []);
+    
+    // ✅ Fetch sites for filter dropdown
+    const fetchSites = async () => {
+        try {
+            const branches = await branchesAPI.getAll();
+            const sitesList = branches.map(branch => branch.name).sort();
+            setSites(sitesList);
+        } catch (err) {
+            console.error('Error fetching sites:', err);
+            setSites([]);
+        }
+    };
 
     // Listen for Intent, Site Transfer, and Delivery update events
     useEffect(() => {
@@ -97,7 +118,7 @@ export default function UpcomingDeliveries({ isTabView = false }) {
         navigate(`/dashboard/material/delivery-checklist/${delivery._id}`);
     };
 
-    // Filter deliveries by search term and type
+    // ✅ Enhanced filter deliveries by search term, type, site, status, and date range
     const filteredDeliveries = deliveries.filter((delivery) => {
         // Type filter
         if (typeFilter !== "ALL" && delivery.type !== typeFilter) {
@@ -105,12 +126,47 @@ export default function UpcomingDeliveries({ isTabView = false }) {
         }
         
         // Search filter
-        if (!search) return true;
-        const searchLower = search.toLowerCase();
-        return (
-            delivery.st_id?.toLowerCase().includes(searchLower) ||
-            delivery.transfer_number?.toLowerCase().includes(searchLower)
-        );
+        if (search) {
+            const searchLower = search.toLowerCase();
+            const matchesSearch = (
+                delivery.st_id?.toLowerCase().includes(searchLower) ||
+                delivery.transfer_number?.toLowerCase().includes(searchLower)
+            );
+            if (!matchesSearch) return false;
+        }
+        
+        // Site filter (matches from OR to)
+        if (filterSite) {
+            const matchesSite = (
+                delivery.from?.toLowerCase().includes(filterSite.toLowerCase()) ||
+                delivery.to?.toLowerCase().includes(filterSite.toLowerCase())
+            );
+            if (!matchesSite) return false;
+        }
+        
+        // Status filter
+        if (filterStatus) {
+            if (delivery.status?.toLowerCase() !== filterStatus.toLowerCase()) return false;
+        }
+        
+        // Date from filter
+        if (filterDateFrom) {
+            const fromDate = new Date(filterDateFrom);
+            fromDate.setHours(0, 0, 0, 0);
+            const itemDate = new Date(delivery.date || delivery.createdAt);
+            itemDate.setHours(0, 0, 0, 0);
+            if (itemDate < fromDate) return false;
+        }
+        
+        // Date to filter
+        if (filterDateTo) {
+            const toDate = new Date(filterDateTo);
+            toDate.setHours(23, 59, 59, 999);
+            const itemDate = new Date(delivery.date || delivery.createdAt);
+            if (itemDate > toDate) return false;
+        }
+        
+        return true;
     });
 
     const getStatusBadge = (status) => {
@@ -136,6 +192,93 @@ export default function UpcomingDeliveries({ isTabView = false }) {
         <div className={isTabView ? "px-6 py-6" : "p-3"}>
             {/* Filter and Search */}
             <div className="mb-4 space-y-3">
+                {/* ✅ Additional Filters Toggle Button */}
+                <div>
+                    <button
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all"
+                    >
+                        <span className="font-semibold flex items-center gap-2">
+                            <Filter size={18} />
+                            More Filters
+                        </span>
+                        <span className="text-sm">
+                            {showFilters ? '▲' : '▼'}
+                        </span>
+                    </button>
+                </div>
+                
+                {/* ✅ Additional Filters Panel */}
+                {showFilters && (
+                    <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-3">
+                        {/* Site Filter */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Filter by Site</label>
+                            <select
+                                value={filterSite}
+                                onChange={(e) => setFilterSite(e.target.value)}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white"
+                            >
+                                <option value="">All Sites</option>
+                                {sites.map(site => (
+                                    <option key={site} value={site}>{site}</option>
+                                ))}
+                            </select>
+                        </div>
+                        
+                        {/* Status Filter */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Filter by Status</label>
+                            <select
+                                value={filterStatus}
+                                onChange={(e) => setFilterStatus(e.target.value)}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white"
+                            >
+                                <option value="">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="partial">Partial</option>
+                                <option value="transferred">Transferred</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        
+                        {/* Date Range */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">From Date</label>
+                                <input
+                                    type="date"
+                                    value={filterDateFrom}
+                                    onChange={(e) => setFilterDateFrom(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1.5">To Date</label>
+                                <input
+                                    type="date"
+                                    value={filterDateTo}
+                                    onChange={(e) => setFilterDateTo(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                                />
+                            </div>
+                        </div>
+                        
+                        {/* Clear Additional Filters Button */}
+                        <button
+                            onClick={() => {
+                                setFilterSite('');
+                                setFilterStatus('');
+                                setFilterDateFrom('');
+                                setFilterDateTo('');
+                            }}
+                            className="w-full px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
+                        >
+                            Clear Additional Filters
+                        </button>
+                    </div>
+                )}
+                
                 {/* Type Filter */}
                 <div>
                     <select

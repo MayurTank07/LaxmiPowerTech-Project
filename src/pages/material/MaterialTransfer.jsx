@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MaterialTransferForm from "./MaterialTransferForm";
-import { siteTransferAPI } from "../../utils/materialAPI";
+import { siteTransferAPI, branchesAPI } from "../../utils/materialAPI";
+import { Filter } from "lucide-react";
 
 export default function MaterialTransfer({ isTabView = false }) {
   const navigate = useNavigate();
@@ -10,11 +11,32 @@ export default function MaterialTransfer({ isTabView = false }) {
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  
+  // ✅ Filter states
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterSite, setFilterSite] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
+  const [sites, setSites] = useState([]);
 
   // Fetch site transfers from backend
   useEffect(() => {
     fetchTransfers();
-  }, [currentPage]);
+    fetchSites();
+  }, [currentPage, filterSite, filterStatus, filterDateFrom, filterDateTo]);
+  
+  // ✅ Fetch sites for filter dropdown
+  const fetchSites = async () => {
+    try {
+      const branches = await branchesAPI.getAll();
+      const sitesList = branches.map(branch => branch.name).sort();
+      setSites(sitesList);
+    } catch (err) {
+      console.error('Error fetching sites:', err);
+      setSites([]);
+    }
+  };
 
   // Auto-refresh when window gains focus (user switches back to tab)
   useEffect(() => {
@@ -78,7 +100,42 @@ export default function MaterialTransfer({ isTabView = false }) {
       setLoading(true);
       const response = await siteTransferAPI.getAll(currentPage, 10);
       if (response.success) {
-        setTransfers(response.data || []);
+        let data = response.data || [];
+        
+        // ✅ Apply filters client-side
+        if (filterSite) {
+          data = data.filter(item => 
+            item.fromSite?.toLowerCase().includes(filterSite.toLowerCase()) ||
+            item.toSite?.toLowerCase().includes(filterSite.toLowerCase())
+          );
+        }
+        
+        if (filterStatus) {
+          data = data.filter(item => 
+            item.status?.toLowerCase() === filterStatus.toLowerCase()
+          );
+        }
+        
+        if (filterDateFrom) {
+          const fromDate = new Date(filterDateFrom);
+          fromDate.setHours(0, 0, 0, 0);
+          data = data.filter(item => {
+            const itemDate = new Date(item.createdAt);
+            itemDate.setHours(0, 0, 0, 0);
+            return itemDate >= fromDate;
+          });
+        }
+        
+        if (filterDateTo) {
+          const toDate = new Date(filterDateTo);
+          toDate.setHours(23, 59, 59, 999);
+          data = data.filter(item => {
+            const itemDate = new Date(item.createdAt);
+            return itemDate <= toDate;
+          });
+        }
+        
+        setTransfers(data);
         setTotalPages(response.pagination?.totalPages || 1);
       }
     } catch (err) {
@@ -126,6 +183,93 @@ export default function MaterialTransfer({ isTabView = false }) {
     <>
       {/* Transfer List - Mobile-First */}
       <div className={isTabView ? "px-6 pb-20 pt-6" : "px-3 pb-20 pt-3"}>
+        {/* ✅ Filter Toggle Button */}
+        <div className="mb-4">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all"
+          >
+            <span className="font-semibold flex items-center gap-2">
+              <Filter size={18} />
+              Filters
+            </span>
+            <span className="text-sm">
+              {showFilters ? '▲' : '▼'}
+            </span>
+          </button>
+        </div>
+        
+        {/* ✅ Filters Panel */}
+        {showFilters && (
+          <div className="mb-4 bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-3">
+            {/* Site Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Filter by Site</label>
+              <select
+                value={filterSite}
+                onChange={(e) => setFilterSite(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white"
+              >
+                <option value="">All Sites</option>
+                {sites.map(site => (
+                  <option key={site} value={site}>{site}</option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Status Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Filter by Status</label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white"
+              >
+                <option value="">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="transferred">Transferred</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            
+            {/* Date Range */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">From Date</label>
+                <input
+                  type="date"
+                  value={filterDateFrom}
+                  onChange={(e) => setFilterDateFrom(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">To Date</label>
+                <input
+                  type="date"
+                  value={filterDateTo}
+                  onChange={(e) => setFilterDateTo(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                />
+              </div>
+            </div>
+            
+            {/* Clear Filters Button */}
+            <button
+              onClick={() => {
+                setFilterSite('');
+                setFilterStatus('');
+                setFilterDateFrom('');
+                setFilterDateTo('');
+              }}
+              className="w-full px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
+            >
+              Clear All Filters
+            </button>
+          </div>
+        )}
+        
         {loading ? (
           <div className="flex justify-center items-center py-10">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-500"></div>

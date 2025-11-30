@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { indentAPI, purchaseOrderAPI } from '../../utils/materialAPI';
-import { Plus, Image as ImageIcon } from 'lucide-react';
+import { indentAPI, purchaseOrderAPI, branchesAPI } from '../../utils/materialAPI';
+import { Plus, Image as ImageIcon, Filter } from 'lucide-react';
 import { FaArrowLeft } from 'react-icons/fa';
 import AddIntentPopup from './AddIntentPopup';
 import axios from '../../utils/axios';
@@ -13,11 +13,32 @@ export default function Intent({ isTabView = false }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showPopup, setShowPopup] = useState(false);
+  
+  // ✅ Filter states
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterSite, setFilterSite] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
+  const [sites, setSites] = useState([]);
 
   // Fetch indents (uploaded photos with PO IDs) from backend
   useEffect(() => {
     fetchIndents();
+    fetchSites();
   }, [currentPage]);
+  
+  // ✅ Fetch sites for filter dropdown
+  const fetchSites = async () => {
+    try {
+      const branches = await branchesAPI.getAll();
+      const sitesList = branches.map(branch => branch.name).sort();
+      setSites(sitesList);
+    } catch (err) {
+      console.error('Error fetching sites:', err);
+      setSites([]);
+    }
+  };
 
   // Auto-refresh when window gains focus
   useEffect(() => {
@@ -93,8 +114,40 @@ export default function Intent({ isTabView = false }) {
       }));
       
       // Merge and sort by creation date (newest first)
-      const combinedData = [...indentsData, ...purchaseOrdersData]
+      let combinedData = [...indentsData, ...purchaseOrdersData]
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
+      // ✅ Apply filters client-side
+      if (filterSite) {
+        combinedData = combinedData.filter(item => 
+          item.deliverySite?.toLowerCase().includes(filterSite.toLowerCase())
+        );
+      }
+      
+      if (filterStatus) {
+        combinedData = combinedData.filter(item => 
+          item.status?.toLowerCase() === filterStatus.toLowerCase()
+        );
+      }
+      
+      if (filterDateFrom) {
+        const fromDate = new Date(filterDateFrom);
+        fromDate.setHours(0, 0, 0, 0);
+        combinedData = combinedData.filter(item => {
+          const itemDate = new Date(item.createdAt);
+          itemDate.setHours(0, 0, 0, 0);
+          return itemDate >= fromDate;
+        });
+      }
+      
+      if (filterDateTo) {
+        const toDate = new Date(filterDateTo);
+        toDate.setHours(23, 59, 59, 999);
+        combinedData = combinedData.filter(item => {
+          const itemDate = new Date(item.createdAt);
+          return itemDate <= toDate;
+        });
+      }
       
       console.log(`✅ Fetched ${indentsData.length} indents + ${purchaseOrdersData.length} purchase orders = ${combinedData.length} total Intent PO records`);
       setIndents(combinedData);
@@ -152,6 +205,93 @@ export default function Intent({ isTabView = false }) {
   // Render content only (for tab view)
   const renderContent = () => (
     <div className="px-6 py-6">
+      {/* ✅ Filter Toggle Button */}
+      <div className="mb-4">
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all"
+        >
+          <span className="font-semibold flex items-center gap-2">
+            <Filter size={18} />
+            Filters
+          </span>
+          <span className="text-sm">
+            {showFilters ? '▲' : '▼'}
+          </span>
+        </button>
+      </div>
+      
+      {/* ✅ Filters Panel */}
+      {showFilters && (
+        <div className="mb-4 bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-3">
+          {/* Site Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Filter by Site</label>
+            <select
+              value={filterSite}
+              onChange={(e) => setFilterSite(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white"
+            >
+              <option value="">All Sites</option>
+              {sites.map(site => (
+                <option key={site} value={site}>{site}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Status Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Filter by Status</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white"
+            >
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="transferred">Transferred</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          
+          {/* Date Range */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">From Date</label>
+              <input
+                type="date"
+                value={filterDateFrom}
+                onChange={(e) => setFilterDateFrom(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">To Date</label>
+              <input
+                type="date"
+                value={filterDateTo}
+                onChange={(e) => setFilterDateTo(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+              />
+            </div>
+          </div>
+          
+          {/* Clear Filters Button */}
+          <button
+            onClick={() => {
+              setFilterSite('');
+              setFilterStatus('');
+              setFilterDateFrom('');
+              setFilterDateTo('');
+            }}
+            className="w-full px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
+          >
+            Clear All Filters
+          </button>
+        </div>
+      )}
+      
       {loading ? (
         <div className="flex justify-center items-center py-10">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>

@@ -420,73 +420,75 @@ export default function AdminSiteTransfer() {
                 />
               </div>
               
-              {/* ✅ Filters Row */}
-              <div className="flex gap-3 items-end flex-wrap">
-                {/* Site Filter */}
-                <div className="flex-1 min-w-[200px]">
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Filter by Site</label>
-                  <select
-                    value={filterSite}
-                    onChange={(e) => setFilterSite(e.target.value)}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white"
+              {/* ✅ Filters Section */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                <div className="flex gap-4 items-end flex-wrap">
+                  {/* Site Filter */}
+                  <div className="flex-1 min-w-[200px]">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Filter by Site</label>
+                    <select
+                      value={filterSite}
+                      onChange={(e) => setFilterSite(e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white shadow-sm"
+                    >
+                      <option value="">All Sites</option>
+                      {sites.map(site => (
+                        <option key={site} value={site}>{site}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  {/* Status Filter */}
+                  <div className="flex-1 min-w-[180px]">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Filter by Status</label>
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white shadow-sm"
+                    >
+                      <option value="">All Status</option>
+                      <option value="pending">Pending</option>
+                      <option value="in-transit">In Transit</option>
+                      <option value="delivered">Delivered</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                  
+                  {/* Date From */}
+                  <div className="flex-1 min-w-[160px]">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">From Date</label>
+                    <input
+                      type="date"
+                      value={filterDateFrom}
+                      onChange={(e) => setFilterDateFrom(e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 shadow-sm"
+                    />
+                  </div>
+                  
+                  {/* Date To */}
+                  <div className="flex-1 min-w-[160px]">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">To Date</label>
+                    <input
+                      type="date"
+                      value={filterDateTo}
+                      onChange={(e) => setFilterDateTo(e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 shadow-sm"
+                    />
+                  </div>
+                  
+                  {/* Clear Filters Button */}
+                  <button
+                    onClick={() => {
+                      setFilterSite('');
+                      setFilterStatus('');
+                      setFilterDateFrom('');
+                      setFilterDateTo('');
+                    }}
+                    className="px-5 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-md transition-colors shadow-sm"
                   >
-                    <option value="">All Sites</option>
-                    {sites.map(site => (
-                      <option key={site} value={site}>{site}</option>
-                    ))}
-                  </select>
+                    Clear Filters
+                  </button>
                 </div>
-                
-                {/* Status Filter */}
-                <div className="flex-1 min-w-[180px]">
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Filter by Status</label>
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white"
-                  >
-                    <option value="">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="in-transit">In Transit</option>
-                    <option value="delivered">Delivered</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
-                
-                {/* Date From */}
-                <div className="flex-1 min-w-[160px]">
-                  <label className="block text-xs font-medium text-gray-600 mb-1">From Date</label>
-                  <input
-                    type="date"
-                    value={filterDateFrom}
-                    onChange={(e) => setFilterDateFrom(e.target.value)}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
-                  />
-                </div>
-                
-                {/* Date To */}
-                <div className="flex-1 min-w-[160px]">
-                  <label className="block text-xs font-medium text-gray-600 mb-1">To Date</label>
-                  <input
-                    type="date"
-                    value={filterDateTo}
-                    onChange={(e) => setFilterDateTo(e.target.value)}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
-                  />
-                </div>
-                
-                {/* Clear Filters Button */}
-                <button
-                  onClick={() => {
-                    setFilterSite('');
-                    setFilterStatus('');
-                    setFilterDateFrom('');
-                    setFilterDateTo('');
-                  }}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded transition-colors"
-                >
-                  Clear Filters
-                </button>
               </div>
             </div>
 
