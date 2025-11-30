@@ -196,13 +196,13 @@ export default function UpcomingDeliveries({ isTabView = false }) {
                 <div>
                     <button
                         onClick={() => setShowFilters(!showFilters)}
-                        className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all"
+                        className="w-full flex items-center justify-between px-3 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all"
                     >
-                        <span className="font-semibold flex items-center gap-2">
-                            <Filter size={18} />
+                        <span className="font-semibold flex items-center gap-2 text-sm">
+                            <Filter size={16} />
                             More Filters
                         </span>
-                        <span className="text-sm">
+                        <span className="text-xs">
                             {showFilters ? '▲' : '▼'}
                         </span>
                     </button>
@@ -210,56 +210,56 @@ export default function UpcomingDeliveries({ isTabView = false }) {
                 
                 {/* ✅ Additional Filters Panel */}
                 {showFilters && (
-                    <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-3">
+                    <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm space-y-2.5">
                         {/* Site Filter */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Filter by Site</label>
+                            <label className="block text-xs font-semibold text-gray-700 mb-1">Site</label>
                             <select
                                 value={filterSite}
                                 onChange={(e) => setFilterSite(e.target.value)}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white"
+                                className="w-full border border-gray-300 rounded-md px-2.5 py-2 text-sm text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
                             >
-                                <option value="">All Sites</option>
+                                <option value="" className="text-gray-500">All Sites</option>
                                 {sites.map(site => (
-                                    <option key={site} value={site}>{site}</option>
+                                    <option key={site} value={site} className="text-gray-900">{site}</option>
                                 ))}
                             </select>
                         </div>
                         
                         {/* Status Filter */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Filter by Status</label>
+                            <label className="block text-xs font-semibold text-gray-700 mb-1">Status</label>
                             <select
                                 value={filterStatus}
                                 onChange={(e) => setFilterStatus(e.target.value)}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white"
+                                className="w-full border border-gray-300 rounded-md px-2.5 py-2 text-sm text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
                             >
-                                <option value="">All Status</option>
-                                <option value="pending">Pending</option>
-                                <option value="partial">Partial</option>
-                                <option value="transferred">Transferred</option>
-                                <option value="cancelled">Cancelled</option>
+                                <option value="" className="text-gray-500">All Status</option>
+                                <option value="pending" className="text-gray-900">Pending</option>
+                                <option value="partial" className="text-gray-900">Partial</option>
+                                <option value="transferred" className="text-gray-900">Transferred</option>
+                                <option value="cancelled" className="text-gray-900">Cancelled</option>
                             </select>
                         </div>
                         
                         {/* Date Range */}
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-2">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">From Date</label>
+                                <label className="block text-xs font-semibold text-gray-700 mb-1">From</label>
                                 <input
                                     type="date"
                                     value={filterDateFrom}
                                     onChange={(e) => setFilterDateFrom(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                                    className="w-full border border-gray-300 rounded-md px-2.5 py-2 text-xs text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">To Date</label>
+                                <label className="block text-xs font-semibold text-gray-700 mb-1">To</label>
                                 <input
                                     type="date"
                                     value={filterDateTo}
                                     onChange={(e) => setFilterDateTo(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                                    className="w-full border border-gray-300 rounded-md px-2.5 py-2 text-xs text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
                                 />
                             </div>
                         </div>
@@ -272,9 +272,9 @@ export default function UpcomingDeliveries({ isTabView = false }) {
                                 setFilterDateFrom('');
                                 setFilterDateTo('');
                             }}
-                            className="w-full px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
+                            className="w-full px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition-colors"
                         >
-                            Clear Additional Filters
+                            Clear Filters
                         </button>
                     </div>
                 )}

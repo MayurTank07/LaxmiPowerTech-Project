@@ -393,57 +393,57 @@ export default function AdminUpcomingDeliveries() {
             </div>
             
             {/* ✅ Filters Section */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+            <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg p-4 mb-4 shadow-sm">
               <div className="flex gap-4 items-end flex-wrap">
                 {/* Site Filter */}
                 <div className="flex-1 min-w-[200px]">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Filter by Site</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Filter by Site</label>
                   <select
                     value={filterSite}
                     onChange={(e) => setFilterSite(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white shadow-sm"
+                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white hover:border-gray-400 transition-colors cursor-pointer"
                   >
-                    <option value="">All Sites</option>
+                    <option value="" className="text-gray-500">All Sites</option>
                     {sites.map(site => (
-                      <option key={site} value={site}>{site}</option>
+                      <option key={site} value={site} className="text-gray-900">{site}</option>
                     ))}
                   </select>
                 </div>
                 
                 {/* Status Filter */}
                 <div className="flex-1 min-w-[180px]">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Filter by Status</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Filter by Status</label>
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white shadow-sm"
+                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white hover:border-gray-400 transition-colors cursor-pointer"
                   >
-                    <option value="">All Status</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Partial">Partial</option>
-                    <option value="Transferred">Transferred</option>
+                    <option value="" className="text-gray-500">All Status</option>
+                    <option value="Pending" className="text-gray-900">Pending</option>
+                    <option value="Partial" className="text-gray-900">Partial</option>
+                    <option value="Transferred" className="text-gray-900">Transferred</option>
                   </select>
                 </div>
                 
                 {/* Date From */}
                 <div className="flex-1 min-w-[160px]">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">From Date</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">From Date</label>
                   <input
                     type="date"
                     value={filterDateFrom}
                     onChange={(e) => setFilterDateFrom(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 shadow-sm"
+                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white hover:border-gray-400 transition-colors"
                   />
                 </div>
                 
                 {/* Date To */}
                 <div className="flex-1 min-w-[160px]">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">To Date</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">To Date</label>
                   <input
                     type="date"
                     value={filterDateTo}
                     onChange={(e) => setFilterDateTo(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 shadow-sm"
+                    className="w-full border-2 border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white hover:border-gray-400 transition-colors"
                   />
                 </div>
                 
@@ -455,7 +455,7 @@ export default function AdminUpcomingDeliveries() {
                     setFilterDateFrom('');
                     setFilterDateTo('');
                   }}
-                  className="px-5 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-md transition-colors shadow-sm"
+                  className="px-5 py-2.5 bg-white border-2 border-gray-300 hover:bg-gray-100 hover:border-gray-400 text-gray-700 text-sm font-semibold rounded-lg transition-all"
                 >
                   Clear Filters
                 </button>
