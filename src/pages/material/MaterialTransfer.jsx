@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import MaterialTransferForm from "./MaterialTransferForm";
 import { siteTransferAPI, branchesAPI } from "../../utils/materialAPI";
 import { Filter } from "lucide-react";
 
 export default function MaterialTransfer({ isTabView = false }) {
   const navigate = useNavigate();
-  const [showForm, setShowForm] = useState(false);
   const [transfers, setTransfers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
