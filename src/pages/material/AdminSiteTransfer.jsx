@@ -45,6 +45,64 @@ export default function AdminSiteTransfer() {
       setSites([]);
     }
   };
+  
+  // Fetch materials and categories - Same as AdminIntent
+  const fetchMaterialsAndCategories = async () => {
+    try {
+      const materials = await materialAPI.getMaterials();
+      setAllMaterials(materials || []);
+      
+      // Extract unique categories
+      const uniqueCategories = [...new Set(materials.map(item => item.category).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b));
+      setCategories(uniqueCategories);
+    } catch (err) {
+      console.error('Error fetching materials:', err);
+      setAllMaterials([]);
+      setCategories([]);
+    }
+  };
+
+  // Helper functions for materials - Same as AdminIntent
+  const getSubcategories = (category) => {
+    if (!category || !Array.isArray(allMaterials) || allMaterials.length === 0) {
+      return [];
+    }
+    return [...new Set(
+      allMaterials
+        .filter(item => item?.category === category)
+        .map(item => item.subCategory)
+        .filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b));
+  };
+
+  const getSubSubcategories = (category, subCategory) => {
+    if (!category || !subCategory || !Array.isArray(allMaterials) || allMaterials.length === 0) {
+      return [];
+    }
+    return [...new Set(
+      allMaterials
+        .filter(item => item?.category === category && item?.subCategory === subCategory)
+        .map(item => item.subCategory1)
+        .filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b));
+  };
+
+  const getSubCategory2 = (category, subCategory, subCategory1) => {
+    if (!category || !subCategory || !subCategory1 || !Array.isArray(allMaterials) || allMaterials.length === 0) {
+      return [];
+    }
+    return [...new Set(
+      allMaterials
+        .filter(item => 
+          item?.category === category && 
+          item?.subCategory === subCategory && 
+          item?.subCategory1 === subCategory1
+        )
+        .map(item => item.subCategory2)
+        .filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b));
+  };
 
   // ❌ DISABLED: Auto-refresh removed per client request
   // No event listeners, no auto-polling, no auto-refresh
@@ -166,28 +224,42 @@ export default function AdminSiteTransfer() {
     }
   };
 
-  // ==================== MATERIAL MANAGEMENT ====================
-  const updateMaterial = (index, field, value) => {
-    const updatedMaterials = [...formData.materials];
-    updatedMaterials[index] = {
-      ...updatedMaterials[index],
-      [field]: value
-    };
-    setFormData({ ...formData, materials: updatedMaterials });
+  // ==================== MATERIAL MANAGEMENT - Same as AdminIntent ====================
+  const addMaterialRow = () => {
+    const newMaterialId = `material-${Date.now()}`;
+    setFormData(prev => ({
+      ...prev,
+      materials: [
+        ...(Array.isArray(prev.materials) ? prev.materials : []),
+        {
+          id: newMaterialId,
+          category: '',
+          subCategory: '',
+          subCategory1: '',
+          subCategory2: '',
+          quantity: '',
+          uom: 'Nos',
+          remarks: ''
+        }
+      ]
+    }));
+    setEditingMaterialId(newMaterialId);
   };
 
-  const addMaterial = () => {
-    setFormData({
-      ...formData,
-      materials: [...formData.materials, { itemName: '', quantity: '', uom: '', remarks: '' }]
-    });
+  const removeMaterialRow = (id) => {
+    setFormData(prev => ({
+      ...prev,
+      materials: prev.materials.filter(m => m.id !== id)
+    }));
   };
 
-  const removeMaterial = (index) => {
-    setFormData({
-      ...formData,
-      materials: formData.materials.filter((_, i) => i !== index)
-    });
+  const updateMaterial = (id, updates) => {
+    setFormData(prev => ({
+      ...prev,
+      materials: prev.materials.map(m => 
+        m.id === id ? { ...m, ...updates } : m
+      )
+    }));
   };
 
   // ==================== DELETE FUNCTIONALITY ====================
@@ -707,85 +779,52 @@ export default function AdminSiteTransfer() {
                     </h3>
                     {editing && (
                       <button
-                        onClick={addMaterial}
-                        className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                        onClick={addMaterialRow}
+                        className="flex items-center gap-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
                       >
-                        + Add Material
+                        <Plus size={16} />
+                        Add Material
                       </button>
                     )}
                   </div>
                   {editing ? (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full border text-sm">
-                        <thead className="bg-orange-50">
-                          <tr>
-                            <th className="border px-3 py-2 text-left font-medium text-gray-700">#</th>
-                            <th className="border px-3 py-2 text-left font-medium text-gray-700">Item Name</th>
-                            <th className="border px-3 py-2 text-left font-medium text-gray-700">Quantity</th>
-                            <th className="border px-3 py-2 text-left font-medium text-gray-700">UOM</th>
-                            <th className="border px-3 py-2 text-left font-medium text-gray-700">Remarks</th>
-                            <th className="border px-3 py-2 text-left font-medium text-gray-700">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {formData.materials.map((material, index) => (
-                            <tr key={index} className="hover:bg-gray-50">
-                              <td className="border px-3 py-2 text-gray-600">{index + 1}</td>
-                              <td className="border px-3 py-2">
-                                <input
-                                  type="text"
-                                  value={material.itemName || ''}
-                                  onChange={(e) => updateMaterial(index, 'itemName', e.target.value)}
-                                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-400"
-                                  placeholder="Item name"
-                                />
-                              </td>
-                              <td className="border px-3 py-2">
-                                <input
-                                  type="number"
-                                  value={material.quantity || ''}
-                                  onChange={(e) => updateMaterial(index, 'quantity', e.target.value)}
-                                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-400"
-                                  placeholder="Qty"
-                                />
-                              </td>
-                              <td className="border px-3 py-2">
-                                <input
-                                  type="text"
-                                  value={material.uom || ''}
-                                  onChange={(e) => updateMaterial(index, 'uom', e.target.value)}
-                                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-400"
-                                  placeholder="UOM"
-                                />
-                              </td>
-                              <td className="border px-3 py-2">
-                                <input
-                                  type="text"
-                                  value={material.remarks || ''}
-                                  onChange={(e) => updateMaterial(index, 'remarks', e.target.value)}
-                                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-400"
-                                  placeholder="Remarks"
-                                />
-                              </td>
-                              <td className="border px-3 py-2">
-                                <button
-                                  onClick={() => removeMaterial(index)}
-                                  className="text-red-600 hover:text-red-700"
-                                  title="Remove"
-                                >
-                                  <X size={16} />
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    <div className="space-y-2">
+                      {Array.isArray(formData.materials) && formData.materials.length > 0 ? (
+                        formData.materials.map((material, idx) => (
+                          <MaterialLineItem
+                            key={material.id}
+                            material={material}
+                            index={idx}
+                            isEditing={editingMaterialId === material.id}
+                            onEdit={() => setEditingMaterialId(material.id)}
+                            onDoneEditing={() => setEditingMaterialId(null)}
+                            onRemove={() => removeMaterialRow(material.id)}
+                            onUpdate={(fieldName, value) => {
+                              if (fieldName === 'category') {
+                                updateMaterial(material.id, { category: value, subCategory: '', subCategory1: '', subCategory2: '' });
+                              } else if (fieldName === 'subCategory') {
+                                updateMaterial(material.id, { subCategory: value, subCategory1: '', subCategory2: '' });
+                              } else if (fieldName === 'subCategory1') {
+                                updateMaterial(material.id, { subCategory1: value, subCategory2: '' });
+                              } else {
+                                updateMaterial(material.id, { [fieldName]: value });
+                              }
+                            }}
+                            categories={categories}
+                            getSubcategories={getSubcategories}
+                            getSubSubcategories={getSubSubcategories}
+                            getSubSubSubcategories={getSubCategory2}
+                          />
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500 text-center py-4">No materials added</p>
+                      )}
                     </div>
                   ) : (
                     selectedTransfer.materials && selectedTransfer.materials.length > 0 ? (
                       <div className="overflow-x-auto">
                         <table className="min-w-full border text-sm">
-                          <thead className="bg-gray-100">
+                          <thead className="bg-orange-50">
                             <tr>
                               <th className="border px-3 py-2 text-left font-medium text-gray-700">#</th>
                               <th className="border px-3 py-2 text-left font-medium text-gray-700">Item Name</th>
