@@ -116,6 +116,21 @@ export default function AdminSiteTransfer() {
   };
 
   const handleSaveChanges = async () => {
+    // Validate form - Same as Intent PO and MaterialCardDetails
+    if (!formData.fromSite || !formData.fromSite.trim()) {
+      showToast('Please select From Site', 'error');
+      return;
+    }
+    if (!formData.toSite || !formData.toSite.trim()) {
+      showToast('Please select To Site', 'error');
+      return;
+    }
+    // Validate materials exist
+    if (!formData.materials || formData.materials.length === 0) {
+      showToast('Please add at least one material', 'error');
+      return;
+    }
+
     try {
       setSaving(true);
       const response = await siteTransferAPI.update(selectedTransfer._id, formData);
