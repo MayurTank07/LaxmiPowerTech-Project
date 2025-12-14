@@ -54,6 +54,11 @@ export const siteTransferAPI = {
     return response.data;
   },
 
+  approve: async (id) => {
+    const response = await axios.put(`/material/site-transfers/${id}/approve`);
+    return response.data;
+  },
+
   delete: async (id) => {
     const response = await axios.delete(`/material/site-transfers/${id}`);
     return response.data;

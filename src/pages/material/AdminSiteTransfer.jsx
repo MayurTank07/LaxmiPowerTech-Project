@@ -244,9 +244,34 @@ export default function AdminSiteTransfer() {
         materials: formattedMaterials
       };
       
-      console.log('Sending update with formatted materials:', updateData);
+      // ✅ Check if status is being changed to 'approved' (matching Intent PO workflow)
+      const isApproving = formData.status === 'approved' && selectedTransfer.status !== 'approved';
       
-      const response = await siteTransferAPI.update(selectedTransfer._id, updateData);
+      console.log('Sending update with formatted materials:', updateData);
+      console.log('Is Approving:', isApproving);
+      
+      let response;
+      
+      if (isApproving) {
+        // ✅ Step 1: Save changes first (without status change)
+        console.log('✅ Status changed to approved - saving changes first, then approving');
+        const saveData = { ...updateData };
+        delete saveData.status;  // Keep status as current
+        
+        const saveResponse = await siteTransferAPI.update(selectedTransfer._id, saveData);
+        if (!saveResponse.success) {
+          throw new Error('Failed to save changes');
+        }
+        
+        // ✅ Step 2: Call approval endpoint (which will sync to Upcoming Deliveries)
+        console.log('✅ Step 2: Calling approval endpoint');
+        response = await siteTransferAPI.approve(selectedTransfer._id);
+        
+        showToast('Site transfer approved and synced to Upcoming Deliveries!', 'success');
+      } else {
+        // Regular update
+        response = await siteTransferAPI.update(selectedTransfer._id, updateData);
+      }
       
       if (response.success) {
         // Refresh modal data
@@ -269,7 +294,9 @@ export default function AdminSiteTransfer() {
         localStorage.setItem('upcomingDeliveryRefresh', Date.now().toString());
         console.log('✅ Site Transfer updated - syncing to Upcoming Deliveries');
         
-        showToast("Site transfer updated successfully and synced to Upcoming Deliveries!", 'success');
+        if (!isApproving) {
+          showToast("Site transfer updated successfully!", 'success');
+        }
       }
     } catch (err) {
       console.error("Error updating transfer:", err);

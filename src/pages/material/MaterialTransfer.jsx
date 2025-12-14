@@ -104,6 +104,12 @@ export default function MaterialTransfer({ isTabView = false }) {
       if (response.success) {
         let data = response.data || [];
         
+        // ✅ CRITICAL: Filter out approved/transferred Site Transfers
+        // They should only appear in Upcoming Deliveries (matching Intent PO behavior)
+        data = data.filter(item => 
+          item.status !== 'approved' && item.status !== 'transferred'
+        );
+        
         // ✅ Apply filters client-side
         if (filterSite) {
           data = data.filter(item => 
