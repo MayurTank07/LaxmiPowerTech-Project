@@ -40,6 +40,7 @@ const MaterialTransferForm = lazy(() => import('./pages/material/MaterialTransfe
 const IntentForm = lazy(() => import('./pages/material/IntentForm'));
 const MaterialCardDetails = lazy(() => import('./pages/material/MaterialCardDetails'));
 const IntentCardDetails = lazy(() => import('./pages/material/IntentCardDetails'));
+const GRNCardDetails = lazy(() => import('./pages/material/GRNCardDetails'));
 const UpcomingDeliveries = lazy(() => import('./pages/material/UpcomingDeliveries'));
 const DeliveryDetails = lazy(() => import('./pages/material/DeliveryDetails'));
 const DeliveryChecklist = lazy(() => import('./pages/material/DeliveryChecklist'));
@@ -151,6 +152,7 @@ function App() {
         <Route path="/material/transfer/:id" element={<MaterialCardDetails />} />
         <Route path="/material/deliveries" element={<Material activeTab="deliveries" />} />
         <Route path="/material/grn" element={<Material activeTab="grn" />} />
+        <Route path="/material/grn/:id" element={<GRNCardDetails />} />
 
         {/* Material Management Routes - Following existing flat route pattern */}
         <Route path="/dashboard/material/uploadindent" element={<UploadIndent />} />
