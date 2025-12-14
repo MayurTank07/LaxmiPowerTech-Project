@@ -98,12 +98,12 @@ export const purchaseOrderAPI = {
   },
 
   delete: async (id) => {
-    const response = await axios.delete(`/api/material/purchase-orders/${id}`);
+    const response = await axios.delete(`/material/purchase-orders/${id}`);
     return response.data;
   },
 
   approve: async (id) => {
-    const response = await axios.put(`/api/material/purchase-orders/${id}/approve`);
+    const response = await axios.put(`/material/purchase-orders/${id}/approve`);
     return response.data;
   },
 
