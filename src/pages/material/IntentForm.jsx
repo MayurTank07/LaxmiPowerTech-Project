@@ -102,6 +102,7 @@ export default function IntentForm() {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const userName = user?.name || '';
   const userId = user?._id || user?.id || '';
+  const userAssignedBranches = user?.assignedBranches || [];
   
   const [formData, setFormData] = useState({
     requestedBy: userName, // ✅ Use user NAME (not ID) - matches Site Transfer
@@ -115,7 +116,7 @@ export default function IntentForm() {
   const [categories, setCategories] = useState([]);
   const [allMaterials, setAllMaterials] = useState([]);
   
-  // Sites list for dropdowns
+  // Sites list for dropdowns (filtered by assigned branches)
   const [sites, setSites] = useState([]);
   
   // Image preview
@@ -130,18 +131,37 @@ export default function IntentForm() {
       try {
         setLoading(true);
         
-        // Fetch sites from backend
+        // Fetch sites from backend and filter by assigned branches
         try {
           const branchesResponse = await axios.get('/branches');
           const branches = branchesResponse.data || [];
-          const sitesList = branches.map(branch => branch.name).sort((a, b) => a.localeCompare(b));
+          
+          // ✅ CRITICAL: Filter sites based on user's assigned branches
+          let filteredBranches = branches;
+          if (userAssignedBranches && userAssignedBranches.length > 0) {
+            const assignedBranchIds = userAssignedBranches.map(b => b._id || b);
+            filteredBranches = branches.filter(branch => 
+              assignedBranchIds.includes(branch._id)
+            );
+            console.log('✅ Filtered to assigned sites:', filteredBranches.length, 'of', branches.length);
+          } else {
+            console.log('⚠️ No assigned branches found, showing all sites');
+          }
+          
+          const sitesList = filteredBranches.map(branch => branch.name).sort((a, b) => a.localeCompare(b));
           setSites(sitesList);
-          console.log('✅ Fetched', sitesList.length, 'sites from backend');
+          console.log('✅ Delivery Site options:', sitesList);
         } catch (err) {
           console.error('❌ Error fetching sites:', err);
-          // Fallback to hardcoded list if API fails
-          const fallbackSites = ['Neelkanth Mongolia', 'Panorama', 'test'].sort((a, b) => a.localeCompare(b));
-          setSites(fallbackSites);
+          // If user has assigned branches, use only those
+          if (userAssignedBranches && userAssignedBranches.length > 0) {
+            const assignedSites = userAssignedBranches.map(b => b.name).filter(Boolean).sort((a, b) => a.localeCompare(b));
+            setSites(assignedSites);
+            console.log('⚠️ Using assigned sites from user object:', assignedSites);
+          } else {
+            const fallbackSites = ['Neelkanth Mongolia', 'Panorama', 'test'].sort((a, b) => a.localeCompare(b));
+            setSites(fallbackSites);
+          }
         }
         
         // Fetch materials from database - MATCHES DEMONSTRATED PROJECT

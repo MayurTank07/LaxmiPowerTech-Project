@@ -100,6 +100,7 @@ export default function MaterialTransferForm() {
   // Get logged-in user from localStorage
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const userName = user?.name || '';
+  const userAssignedBranches = user?.assignedBranches || [];
   
   const [formData, setFormData] = useState({
     fromSite: '',
@@ -117,7 +118,8 @@ export default function MaterialTransferForm() {
   const [allMaterials, setAllMaterials] = useState([]);
   
   // Sites list for dropdowns
-  const [sites, setSites] = useState([]);
+  const [fromSites, setFromSites] = useState([]); // ✅ Restricted to assigned branches
+  const [toSites, setToSites] = useState([]); // ✅ All sites (no restriction)
   
   // Search state for filtering materials in dropdowns
   const [categorySearch, setCategorySearch] = useState('');
@@ -129,19 +131,45 @@ export default function MaterialTransferForm() {
       try {
         setLoading(true);
         
-        // ✅ FETCH SITES FROM BACKEND API - SAME AS INTENT FORM
+        // ✅ FETCH SITES FROM BACKEND API AND APPLY RESTRICTIONS
         try {
           const branchesResponse = await axios.get('/branches');
           const branches = branchesResponse.data || [];
-          const sitesList = branches.map(branch => branch.name).sort((a, b) => a.localeCompare(b));
-          setSites(sitesList);
-          console.log('✅ MaterialTransferForm: Fetched', sitesList.length, 'sites from backend');
+          
+          // ✅ CRITICAL: Filter "From Site" based on user's assigned branches
+          let filteredFromBranches = branches;
+          if (userAssignedBranches && userAssignedBranches.length > 0) {
+            const assignedBranchIds = userAssignedBranches.map(b => b._id || b);
+            filteredFromBranches = branches.filter(branch => 
+              assignedBranchIds.includes(branch._id)
+            );
+            console.log('✅ Filtered From Sites to assigned:', filteredFromBranches.length, 'of', branches.length);
+          } else {
+            console.log('⚠️ No assigned branches found for From Site, showing all');
+          }
+          
+          // ✅ From Site: Only assigned branches
+          const fromSitesList = filteredFromBranches.map(branch => branch.name).sort((a, b) => a.localeCompare(b));
+          setFromSites(fromSitesList);
+          
+          // ✅ To Site: All sites (no restriction)
+          const toSitesList = branches.map(branch => branch.name).sort((a, b) => a.localeCompare(b));
+          setToSites(toSitesList);
+          
+          console.log('✅ From Site options:', fromSitesList);
+          console.log('✅ To Site options (all):', toSitesList.length, 'sites');
         } catch (err) {
           console.error('❌ MaterialTransferForm: Error fetching sites:', err);
-          // Fallback to hardcoded list if API fails
-          const fallbackSites = ['Neelkanth Mongolia', 'Panorama', 'test'].sort((a, b) => a.localeCompare(b));
-          setSites(fallbackSites);
-          console.log('⚠️ MaterialTransferForm: Using fallback sites');
+          // If user has assigned branches, use only those for From Site
+          if (userAssignedBranches && userAssignedBranches.length > 0) {
+            const assignedSites = userAssignedBranches.map(b => b.name).filter(Boolean).sort((a, b) => a.localeCompare(b));
+            setFromSites(assignedSites);
+            console.log('⚠️ Using assigned sites from user object for From Site:', assignedSites);
+          } else {
+            const fallbackSites = ['Neelkanth Mongolia', 'Panorama', 'test'].sort((a, b) => a.localeCompare(b));
+            setFromSites(fallbackSites);
+            setToSites(fallbackSites);
+          }
         }
         
         // ✅ FETCH MATERIALS - MATCHES DEMONSTRATED PROJECT
@@ -430,8 +458,8 @@ export default function MaterialTransferForm() {
                   required
                   disabled={submitting}
                 >
-                  <option value="">Select from site</option>
-                  {sites.map(site => (
+                  <option value="">Select from site (assigned only)</option>
+                  {fromSites.map(site => (
                     <option key={site} value={site}>{site}</option>
                   ))}
                 </select>
@@ -454,8 +482,8 @@ export default function MaterialTransferForm() {
                   required
                   disabled={submitting}
                 >
-                  <option value="">Select destination site</option>
-                  {sites
+                  <option value="">Select destination site (all sites)</option>
+                  {toSites
                     .filter(site => site !== formData.fromSite)
                     .map(site => (
                       <option key={site} value={site}>{site}</option>
