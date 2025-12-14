@@ -85,8 +85,17 @@ export default function Material({ activeTab }) {
         </div>
 
         {/* Content Area */}
-        <div className="bg-white">
+        <div className="bg-white pb-20">
           {renderContent()}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 pb-6 pt-2">
+          <div className="text-center">
+            <p className="text-xs text-gray-400">
+              Powered by Laxmi Power Tech
+            </p>
+          </div>
         </div>
       </div>
     </div>
