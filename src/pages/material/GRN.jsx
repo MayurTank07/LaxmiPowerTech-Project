@@ -98,10 +98,10 @@ export default function GRN({ isTabView = false }) {
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <div className="text-sm font-semibold text-gray-900">
-                      {delivery.st_id || delivery.transfer_number}
+                      {delivery.transfer_number || delivery.st_id}
                     </div>
                     <div className="text-xs text-gray-500 mt-0.5">
-                      {delivery.type === 'PO' ? '📋 Purchase Order' : '🚚 Site Transfer'}
+                      {delivery.type === 'PO' ? '📋 Vendor-wise PO' : '🚚 Site Transfer'}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

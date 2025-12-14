@@ -125,9 +125,9 @@ export default function GRNCardDetails() {
               <CheckCircle size={24} className="text-white" />
               <h1 className="text-white text-2xl font-bold">GRN Details</h1>
             </div>
-            <p className="text-white/90 text-sm font-medium">{delivery.st_id || delivery.transfer_number}</p>
+            <p className="text-white/90 text-sm font-medium">{delivery.transfer_number || delivery.st_id}</p>
             <p className="text-white/70 text-xs mt-1">
-              {delivery.type === 'PO' ? '📋 Purchase Order' : '🚚 Site Transfer'}
+              {delivery.type === 'PO' ? '📋 Vendor-wise PO' : '🚚 Site Transfer'}
             </p>
           </div>
         </div>
@@ -145,9 +145,9 @@ export default function GRNCardDetails() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-gray-600">
-                    {delivery.type === 'PO' ? 'PO ID' : 'ST ID'}
+                    {delivery.type === 'PO' ? 'Vendor-wise PO ID' : 'ST ID'}
                   </label>
-                  <p className="font-bold text-gray-900 text-lg">{delivery.st_id || delivery.transfer_number}</p>
+                  <p className="font-bold text-gray-900 text-lg">{delivery.transfer_number || delivery.st_id}</p>
                 </div>
                 
                 <div>

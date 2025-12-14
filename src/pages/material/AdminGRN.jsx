@@ -253,9 +253,9 @@ export default function AdminGRN() {
                     <tr key={delivery._id} className="hover:bg-gray-50">
                       <td className="border px-4 py-2 font-medium text-gray-900">
                         <div className="flex flex-col">
-                          <span className="font-semibold">{delivery.st_id || delivery.transfer_number || 'N/A'}</span>
+                          <span className="font-semibold">{delivery.transfer_number || delivery.st_id || 'N/A'}</span>
                           <span className="text-xs text-gray-500">
-                            {delivery.type === 'PO' ? 'PO ID' : 'ST ID'}
+                            {delivery.type === 'PO' ? 'Vendor-wise PO' : 'ST ID'}
                           </span>
                         </div>
                       </td>
@@ -317,9 +317,9 @@ export default function AdminGRN() {
               <div className="grid grid-cols-2 gap-4 pb-4 border-b">
                 <div>
                   <label className="text-sm font-medium text-gray-600">
-                    {selectedDelivery.type === 'PO' ? 'Purchase Order ID' : 'Site Transfer ID'}
+                    {selectedDelivery.type === 'PO' ? 'Vendor-wise PO ID' : 'Site Transfer ID'}
                   </label>
-                  <p className="text-gray-900 font-semibold">{selectedDelivery.st_id || selectedDelivery.transfer_number}</p>
+                  <p className="text-gray-900 font-semibold">{selectedDelivery.transfer_number || selectedDelivery.st_id}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Type</label>
