@@ -104,6 +104,10 @@ export default function IntentForm() {
   const userId = user?._id || user?.id || '';
   const userAssignedBranches = user?.assignedBranches || [];
   
+  // Debug: Log user's assigned branches
+  console.log('👤 IntentForm - User:', userName);
+  console.log('🏢 IntentForm - Assigned Branches:', userAssignedBranches);
+  
   const [formData, setFormData] = useState({
     requestedBy: userName, // ✅ Use user NAME (not ID) - matches Site Transfer
     deliverySite: '',
@@ -140,10 +144,14 @@ export default function IntentForm() {
           let filteredBranches = branches;
           if (userAssignedBranches && userAssignedBranches.length > 0) {
             const assignedBranchIds = userAssignedBranches.map(b => b._id || b);
+            console.log('🔍 Assigned Branch IDs:', assignedBranchIds);
+            console.log('🔍 All Branches:', branches.map(b => ({ id: b._id, name: b.name })));
+            
             filteredBranches = branches.filter(branch => 
               assignedBranchIds.includes(branch._id)
             );
             console.log('✅ Filtered to assigned sites:', filteredBranches.length, 'of', branches.length);
+            console.log('✅ Filtered site names:', filteredBranches.map(b => b.name));
           } else {
             console.log('⚠️ No assigned branches found, showing all sites');
           }

@@ -102,6 +102,10 @@ export default function MaterialTransferForm() {
   const userName = user?.name || '';
   const userAssignedBranches = user?.assignedBranches || [];
   
+  // Debug: Log user's assigned branches
+  console.log('👤 MaterialTransferForm - User:', userName);
+  console.log('🏢 MaterialTransferForm - Assigned Branches:', userAssignedBranches);
+  
   const [formData, setFormData] = useState({
     fromSite: '',
     toSite: '',
@@ -140,10 +144,14 @@ export default function MaterialTransferForm() {
           let filteredFromBranches = branches;
           if (userAssignedBranches && userAssignedBranches.length > 0) {
             const assignedBranchIds = userAssignedBranches.map(b => b._id || b);
+            console.log('🔍 Assigned Branch IDs:', assignedBranchIds);
+            console.log('🔍 All Branches:', branches.map(b => ({ id: b._id, name: b.name })));
+            
             filteredFromBranches = branches.filter(branch => 
               assignedBranchIds.includes(branch._id)
             );
             console.log('✅ Filtered From Sites to assigned:', filteredFromBranches.length, 'of', branches.length);
+            console.log('✅ Filtered From Site names:', filteredFromBranches.map(b => b.name));
           } else {
             console.log('⚠️ No assigned branches found for From Site, showing all');
           }
