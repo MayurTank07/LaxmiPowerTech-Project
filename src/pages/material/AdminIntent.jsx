@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { indentAPI, purchaseOrderAPI, materialCatalogAPI as materialAPI, branchesAPI, vendorsAPI } from "../../utils/materialAPI";
+import { indentAPI, purchaseOrderAPI, materialCatalogAPI as materialAPI, branchesAPI } from "../../utils/materialAPI";
 import { Eye, Trash2, X, Edit2, Save, Plus, Image as ImageIcon } from "lucide-react";
 import MaterialLineItem from "./MaterialLineItem";
 import DashboardLayout from "../../layouts/DashboardLayout";
@@ -35,7 +35,7 @@ export default function AdminIntent() {
     fetchMaterialsAndSites();
   }, [currentPage, search, filterSite, filterStatus, filterDateFrom, filterDateTo]);
 
-  // Fetch materials, sites, and vendors for editing
+  // Fetch materials and sites for editing
   const fetchMaterialsAndSites = async () => {
     try {
       // Fetch materials - MATCHES DEMONSTRATED PROJECT
@@ -52,24 +52,10 @@ export default function AdminIntent() {
       const sitesList = branches.map(branch => branch.name).sort();
       setSites(sitesList);
       console.log('✅ Fetched sites from backend:', sitesList);
-      
-      // Fetch vendors from backend
-      try {
-        const vendorsList = await vendorsAPI.getAll();
-        setVendors(vendorsList || []);
-        console.log('✅ Fetched vendors from backend:', vendorsList?.length || 0, 'vendors');
-      } catch (vendorError) {
-        console.error('❌ Failed to fetch vendors:', vendorError.response?.status, vendorError.message);
-        if (vendorError.response?.status === 404) {
-          console.warn('⚠️ Vendors endpoint not found (404). Please ensure backend server is running and /api/vendors route is registered.');
-        }
-        setVendors([]); // Set empty array to prevent undefined errors
-      }
     } catch (err) {
-      console.error('Error fetching materials, sites, and vendors:', err);
+      console.error('Error fetching materials and sites:', err);
       // Fallback to empty array if fetch fails
       setSites([]);
-      setVendors([]);
     }
   };
 
@@ -175,18 +161,6 @@ export default function AdminIntent() {
       if (!indent) {
         setError('Indent not found');
         return;
-      }
-      
-      // Ensure vendors are loaded before opening modal
-      if (!vendors || vendors.length === 0) {
-        try {
-          const vendorsList = await vendorsAPI.getAll();
-          setVendors(vendorsList || []);
-          console.log('✅ Fetched vendors for modal:', vendorsList?.length || 0, 'vendors');
-        } catch (vendorErr) {
-          console.warn('⚠️ Could not fetch vendors, continuing with empty list:', vendorErr);
-          setVendors([]);
-        }
       }
       
       // Determine if this is a PurchaseOrder or Indent based on type field
@@ -318,8 +292,7 @@ export default function AdminIntent() {
         subCategory2: m.subCategory2 || '',
         quantity: m.quantity || '',
         uom: m.uom || 'Nos',
-        remarks: m.remarks || '',
-        vendor: m.vendor?._id || m.vendor || '' // Preserve vendor selection
+        remarks: m.remarks || ''
       }))
     });
     setEditing(true);
@@ -492,75 +465,6 @@ export default function AdminIntent() {
         m.id === id ? { ...m, ...updates } : m
       )
     }));
-  };
-
-  // Handle vendor change for a specific material (in view mode)
-  const handleVendorChange = async (materialIndex, vendorId) => {
-    try {
-      // Update local state immediately for better UX
-      const updatedMaterials = [...selectedIndent.materials];
-      updatedMaterials[materialIndex] = {
-        ...updatedMaterials[materialIndex],
-        vendor: vendorId
-      };
-      
-      setSelectedIndent(prev => ({
-        ...prev,
-        materials: updatedMaterials
-      }));
-      
-      // Prepare materials data for backend
-      const materialsData = updatedMaterials.map(m => ({
-        itemName: m.itemName,
-        category: m.category,
-        subCategory: m.subCategory || '',
-        subCategory1: m.subCategory1 || '',
-        subCategory2: m.subCategory2 || '',
-        quantity: parseInt(m.quantity),
-        uom: m.uom || 'Nos',
-        remarks: m.remarks || '',
-        vendor: m.vendor?._id || m.vendor || null // Handle both populated and unpopulated vendor
-      }));
-      
-      const updateData = {
-        materials: materialsData
-      };
-      
-      // Save to backend
-      const response = selectedIndent.type === 'purchaseOrder'
-        ? await purchaseOrderAPI.update(selectedIndent._id, updateData)
-        : await indentAPI.update(selectedIndent._id, updateData);
-      
-      if (response.success) {
-        // Fetch fresh data to get populated vendor details
-        const updatedResponse = selectedIndent.type === 'purchaseOrder'
-          ? await purchaseOrderAPI.getById(selectedIndent._id)
-          : await indentAPI.getById(selectedIndent._id);
-        
-        if (updatedResponse.success) {
-          setSelectedIndent(updatedResponse.data);
-          
-          // Update the list state
-          setIndents(prev => 
-            prev.map(item => item._id === selectedIndent._id ? updatedResponse.data : item)
-          );
-        }
-        
-        showToast('Vendor updated successfully', 'success');
-      }
-    } catch (err) {
-      console.error('Error updating vendor:', err);
-      showToast(err.response?.data?.message || 'Failed to update vendor', 'error');
-      
-      // Revert local state on error
-      const response = selectedIndent.type === 'purchaseOrder'
-        ? await purchaseOrderAPI.getById(selectedIndent._id)
-        : await indentAPI.getById(selectedIndent._id);
-      
-      if (response.success) {
-        setSelectedIndent(response.data);
-      }
-    }
   };
 
   // Toast notification helper
@@ -1008,21 +912,6 @@ export default function AdminIntent() {
                               <td className="border px-3 py-2 font-medium">{material.itemName || '-'}</td>
                               <td className="border px-3 py-2">{material.quantity || '-'}</td>
                               <td className="border px-3 py-2">{material.uom || '-'}</td>
-                              <td className="border px-3 py-2">
-                                <select
-                                  value={material.vendor?._id || material.vendor || ''}
-                                  onChange={(e) => handleVendorChange(index, e.target.value)}
-                                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-400 bg-white text-gray-900"
-                                  disabled={!vendors || vendors.length === 0}
-                                >
-                                  <option value="">Select Vendor</option>
-                                  {vendors && Array.isArray(vendors) && vendors.map(vendor => (
-                                    <option key={vendor._id} value={vendor._id}>
-                                      {vendor.companyName}
-                                    </option>
-                                  ))}
-                                </select>
-                              </td>
                               <td className="border px-3 py-2 text-gray-600">{material.remarks || '-'}</td>
                             </tr>
                           ))}
