@@ -390,9 +390,15 @@ export default function AdminIntent() {
       }
       
       // Use appropriate API based on type
+      console.log('📤 Sending update with data:', updateData);
+      console.log('   Type:', isPurchaseOrder ? 'Purchase Order' : 'Indent');
+      console.log('   Materials/Items:', updateData.materials || updateData.items);
+      
       const response = isPurchaseOrder
         ? await purchaseOrderAPI.update(selectedIndent._id, updateData)
         : await indentAPI.update(selectedIndent._id, updateData);
+      
+      console.log('📥 Received response:', response);
       
       if (response.success) {
         // Fetch fresh data from server (like demonstrated project)
@@ -423,6 +429,12 @@ export default function AdminIntent() {
               };
             })
           };
+          
+          console.log('✅ Normalized data after save:', normalizedData);
+          console.log('   Materials with vendors:', normalizedData.materials?.map(m => ({
+            itemName: m.itemName,
+            vendor: m.vendor?.companyName || m.vendor || 'NO VENDOR'
+          })));
           
           setSelectedIndent(normalizedData);
           
@@ -1045,7 +1057,13 @@ export default function AdminIntent() {
                               <td className="border px-3 py-2">{material.quantity || '-'}</td>
                               <td className="border px-3 py-2">{material.uom || '-'}</td>
                               <td className="border px-3 py-2 text-gray-600">
-                                {material.vendor?.companyName || 'N/A'}
+                                {(() => {
+                                  console.log(`🔍 Material ${index + 1}:`, material.itemName);
+                                  console.log(`   Vendor object:`, material.vendor);
+                                  console.log(`   Vendor ID:`, material.vendor?._id);
+                                  console.log(`   Company Name:`, material.vendor?.companyName);
+                                  return material.vendor?.companyName || 'N/A';
+                                })()}
                               </td>
                               <td className="border px-3 py-2 text-gray-600">{material.remarks || '-'}</td>
                             </tr>
