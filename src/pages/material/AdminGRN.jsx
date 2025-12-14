@@ -252,7 +252,12 @@ export default function AdminGRN() {
                   {deliveries.map((delivery) => (
                     <tr key={delivery._id} className="hover:bg-gray-50">
                       <td className="border px-4 py-2 font-medium text-gray-900">
-                        {delivery.st_id || delivery.transfer_number || 'N/A'}
+                        <div className="flex flex-col">
+                          <span className="font-semibold">{delivery.st_id || delivery.transfer_number || 'N/A'}</span>
+                          <span className="text-xs text-gray-500">
+                            {delivery.type === 'PO' ? 'PO ID' : 'ST ID'}
+                          </span>
+                        </div>
                       </td>
                       <td className="border px-4 py-2">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -311,7 +316,9 @@ export default function AdminGRN() {
               {/* Header Information */}
               <div className="grid grid-cols-2 gap-4 pb-4 border-b">
                 <div>
-                  <label className="text-sm font-medium text-gray-600">GRN ID</label>
+                  <label className="text-sm font-medium text-gray-600">
+                    {selectedDelivery.type === 'PO' ? 'Purchase Order ID' : 'Site Transfer ID'}
+                  </label>
                   <p className="text-gray-900 font-semibold">{selectedDelivery.st_id || selectedDelivery.transfer_number}</p>
                 </div>
                 <div>

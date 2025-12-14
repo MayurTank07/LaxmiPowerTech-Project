@@ -101,7 +101,7 @@ export default function GRN({ isTabView = false }) {
                       {delivery.st_id || delivery.transfer_number}
                     </div>
                     <div className="text-xs text-gray-500 mt-0.5">
-                      Type: {delivery.type === 'PO' ? 'Purchase Order' : 'Site Transfer'}
+                      {delivery.type === 'PO' ? '📋 Purchase Order' : '🚚 Site Transfer'}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -162,55 +162,72 @@ export default function GRN({ isTabView = false }) {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Header Information */}
+              {/* GRN Summary Section */}
+              <div className="bg-blue-50 rounded-lg p-4 mb-4">
+                <h4 className="text-md font-semibold text-gray-900 mb-3">📄 GRN Summary</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                      {selectedDelivery.type === 'PO' ? 'Purchase Order ID' : 'Site Transfer ID'}
+                    </label>
+                    <p className="text-gray-900 font-bold text-lg mt-1">{selectedDelivery.st_id || selectedDelivery.transfer_number}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Type</label>
+                    <p className="text-gray-900 font-semibold mt-1">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium inline-block ${
+                        selectedDelivery.type === 'PO' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                      }`}>
+                        {selectedDelivery.type === 'PO' ? '📋 Purchase Order' : '🚚 Site Transfer'}
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Status</label>
+                    <p className="text-gray-900 font-semibold mt-1">
+                      <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                        ✅ {selectedDelivery.status}
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Date</label>
+                    <p className="text-gray-900 font-semibold mt-1">{formatDate(selectedDelivery.date || selectedDelivery.createdAt)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Location & Requestor Details */}
               <div className="grid grid-cols-2 gap-4 pb-4 border-b">
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Transfer ID</label>
-                  <p className="text-gray-900 font-semibold">{selectedDelivery.st_id || selectedDelivery.transfer_number}</p>
+                  <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">From Location</label>
+                  <p className="text-gray-900 font-medium mt-1">📍 {selectedDelivery.from || 'N/A'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Type</label>
-                  <p className="text-gray-900">{selectedDelivery.type === 'PO' ? 'Purchase Order' : 'Site Transfer'}</p>
+                  <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">To Location</label>
+                  <p className="text-gray-900 font-medium mt-1">📍 {selectedDelivery.to || 'N/A'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">From</label>
-                  <p className="text-gray-900">{selectedDelivery.from || 'N/A'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">To</label>
-                  <p className="text-gray-900">{selectedDelivery.to || 'N/A'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Requested By</label>
-                  <p className="text-gray-900">{selectedDelivery.createdBy || 'N/A'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Date</label>
-                  <p className="text-gray-900">{formatDate(selectedDelivery.date || selectedDelivery.createdAt)}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Status</label>
-                  <span className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-600">
-                    {selectedDelivery.status}
-                  </span>
+                  <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Requested By</label>
+                  <p className="text-gray-900 font-medium mt-1">👤 {selectedDelivery.createdBy || 'N/A'}</p>
                 </div>
               </div>
 
               {/* Materials Table */}
               <div>
                 <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <Package size={18} />
-                  Materials Received
+                  <Package size={18} className="text-green-600" />
+                  📦 Materials Received
                 </h4>
                 <div className="overflow-x-auto">
-                  <table className="min-w-full border border-gray-200">
-                    <thead className="bg-gray-50">
+                  <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
+                    <thead className="bg-gradient-to-r from-blue-50 to-blue-100">
                       <tr>
-                        <th className="border px-3 py-2 text-left text-xs font-medium text-gray-700">Item</th>
-                        <th className="border px-3 py-2 text-left text-xs font-medium text-gray-700">Category</th>
-                        <th className="border px-3 py-2 text-center text-xs font-medium text-gray-700">Approved Qty</th>
-                        <th className="border px-3 py-2 text-center text-xs font-medium text-gray-700">Received Qty</th>
-                        <th className="border px-3 py-2 text-center text-xs font-medium text-gray-700">Status</th>
+                        <th className="border px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide">Item</th>
+                        <th className="border px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide">Category</th>
+                        <th className="border px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wide">Ordered</th>
+                        <th className="border px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wide">Received</th>
+                        <th className="border px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wide">Status</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -229,11 +246,11 @@ export default function GRN({ isTabView = false }) {
                                 .filter(Boolean)
                                 .join(' - ') || '-'}
                             </td>
-                            <td className="border px-3 py-2 text-center text-sm font-medium text-gray-900">
+                            <td className="border px-3 py-2 text-center text-sm font-bold text-blue-600">
                               {approvedQty}
                             </td>
-                            <td className="border px-3 py-2 text-center text-sm font-semibold text-green-600">
-                              {receivedQty}
+                            <td className="border px-3 py-2 text-center text-sm font-bold text-green-600">
+                              ✓ {receivedQty}
                             </td>
                             <td className="border px-3 py-2 text-center">
                               <span className={`text-xs px-2 py-1 rounded-full font-medium ${
