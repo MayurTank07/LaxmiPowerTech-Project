@@ -451,6 +451,8 @@ export default function AdminSiteTransfer() {
 
   // ✅ Enhanced filter and sort transfers
   const filteredTransfers = transfers
+    // ✅ CRITICAL: Filter out approved/transferred Site Transfers (they should only appear in Upcoming Deliveries/GRN)
+    .filter((transfer) => transfer.status !== 'approved' && transfer.status !== 'transferred')
     .filter((transfer) => {
       // Search filter
       if (search) {

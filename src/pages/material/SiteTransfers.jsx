@@ -248,6 +248,8 @@ export default function SiteTransfers() {
 
   // Filter and sort transfers based on search (prioritize siteTransferId)
   const filteredTransfers = transfers
+    // ✅ CRITICAL: Filter out approved/transferred Site Transfers (they should only appear in Upcoming Deliveries/GRN)
+    .filter((transfer) => transfer.status !== 'approved' && transfer.status !== 'transferred')
     .filter((transfer) => {
       if (!search) return true;
       const searchLower = search.toLowerCase();
