@@ -902,6 +902,7 @@ export default function AdminIntent() {
                             <th className="border px-3 py-2 text-left font-medium text-gray-700">Item Name</th>
                             <th className="border px-3 py-2 text-left font-medium text-gray-700">Quantity</th>
                             <th className="border px-3 py-2 text-left font-medium text-gray-700">UOM</th>
+                            <th className="border px-3 py-2 text-left font-medium text-gray-700">VendorName</th>
                             <th className="border px-3 py-2 text-left font-medium text-gray-700">Remarks</th>
                           </tr>
                         </thead>
@@ -912,6 +913,21 @@ export default function AdminIntent() {
                               <td className="border px-3 py-2 font-medium">{material.itemName || '-'}</td>
                               <td className="border px-3 py-2">{material.quantity || '-'}</td>
                               <td className="border px-3 py-2">{material.uom || '-'}</td>
+                              <td className="border px-3 py-2">
+                                <select
+                                  value={material.vendor?._id || material.vendor || ''}
+                                  onChange={(e) => handleVendorChange(index, e.target.value)}
+                                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-400 bg-white text-gray-900"
+                                  disabled={!vendors || vendors.length === 0}
+                                >
+                                  <option value="">Select Vendor</option>
+                                  {vendors && Array.isArray(vendors) && vendors.map(vendor => (
+                                    <option key={vendor._id} value={vendor._id}>
+                                      {vendor.companyName}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
                               <td className="border px-3 py-2 text-gray-600">{material.remarks || '-'}</td>
                             </tr>
                           ))}
