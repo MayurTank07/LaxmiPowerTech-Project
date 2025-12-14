@@ -236,6 +236,29 @@ export const branchesAPI = {
   }
 };
 
+// Vendors API
+export const vendorsAPI = {
+  getAll: async () => {
+    const response = await axios.get('/vendors');
+    return response.data;
+  },
+  
+  create: async (data) => {
+    const response = await axios.post('/vendors', data);
+    return response.data;
+  },
+  
+  update: async (id, data) => {
+    const response = await axios.put(`/vendors/${id}`, data);
+    return response.data;
+  },
+  
+  delete: async (id) => {
+    const response = await axios.delete(`/vendors/${id}`);
+    return response.data;
+  }
+};
+
 export default {
   materialCatalog: materialCatalogAPI,
   siteTransfer: siteTransferAPI,
@@ -243,5 +266,6 @@ export default {
   upcomingDelivery: upcomingDeliveryAPI,
   indent: indentAPI,
   projects: projectsAPI,
-  branches: branchesAPI
+  branches: branchesAPI,
+  vendors: vendorsAPI
 };
