@@ -185,12 +185,34 @@ export default function AdminIntent() {
       
       if (response.success) {
         // Use fresh data from backend
-        setSelectedIndent({
-          ...response.data,
-          type: isPurchaseOrder ? 'purchaseOrder' : 'indent'
-        });
+        const data = response.data;
+        
+        // ✅ NORMALIZE DATA: Indents use 'items', POs use 'materials'
+        // Convert items to materials for consistent UI display
+        const normalizedData = {
+          ...data,
+          type: isPurchaseOrder ? 'purchaseOrder' : 'indent',
+          materials: isPurchaseOrder ? data.materials : (data.items || []).map(item => {
+            // Parse itemName to extract category/subcategory (e.g., "Tape - PVC Insulation Tape - Black")
+            const nameParts = item.name ? item.name.split(' - ').map(s => s.trim()) : [];
+            return {
+              itemName: item.name,
+              category: nameParts[0] || '',
+              subCategory: nameParts[1] || '',
+              subCategory1: nameParts[2] || '',
+              subCategory2: nameParts[3] || '',
+              quantity: item.quantity,
+              uom: item.unit || 'Nos',
+              remarks: item.remarks,
+              vendor: item.vendor,
+              _id: item._id
+            };
+          })
+        };
+        
+        setSelectedIndent(normalizedData);
         setShowDetailsModal(true);
-        console.log('✅ Loaded fresh Intent PO data from backend');
+        console.log('✅ Loaded fresh Intent PO data from backend', normalizedData);
       } else {
         setError('Failed to fetch latest indent details');
       }
@@ -354,11 +376,34 @@ export default function AdminIntent() {
           : await indentAPI.getById(selectedIndent._id);
         
         if (updatedResponse.success) {
-          setSelectedIndent(updatedResponse.data);
+          // ✅ NORMALIZE: Convert items to materials for consistent UI
+          const data = updatedResponse.data;
+          const normalizedData = {
+            ...data,
+            type: selectedIndent.type,
+            materials: isPurchaseOrder ? data.materials : (data.items || []).map(item => {
+              // Parse itemName to extract category/subcategory
+              const nameParts = item.name ? item.name.split(' - ').map(s => s.trim()) : [];
+              return {
+                itemName: item.name,
+                category: nameParts[0] || '',
+                subCategory: nameParts[1] || '',
+                subCategory1: nameParts[2] || '',
+                subCategory2: nameParts[3] || '',
+                quantity: item.quantity,
+                uom: item.unit || 'Nos',
+                remarks: item.remarks,
+                vendor: item.vendor,
+                _id: item._id
+              };
+            })
+          };
+          
+          setSelectedIndent(normalizedData);
           
           // Update the list state immediately
           setIndents(prev => 
-            prev.map(item => item._id === selectedIndent._id ? updatedResponse.data : item)
+            prev.map(item => item._id === selectedIndent._id ? normalizedData : item)
           );
         }
         
