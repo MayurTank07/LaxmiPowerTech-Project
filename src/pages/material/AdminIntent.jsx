@@ -112,8 +112,10 @@ export default function AdminIntent() {
       
       console.log(`📊 Admin: Fetched ${indentsData.length} indents + ${posData.length} POs = ${combinedData.length} total`);
       
-      // ✅ Apply filters client-side
-      let filteredData = combinedData;
+      // ✅ CRITICAL: Filter out TRANSFERRED Intent POs (Admin should see Approved + Partial only)
+      let filteredData = combinedData.filter(item => 
+        item.status?.toLowerCase() !== 'transferred'
+      );
       
       // Filter by site
       if (filterSite) {
