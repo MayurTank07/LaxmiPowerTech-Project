@@ -389,14 +389,30 @@ export default function AdminIntent() {
         };
       }
       
-      // Use appropriate API based on type
+      // Check if status is being changed to 'approved'
+      const isApproving = formData.status === 'approved' && selectedIndent.status !== 'approved';
+      
       console.log('📤 Sending update with data:', updateData);
       console.log('   Type:', isPurchaseOrder ? 'Purchase Order' : 'Indent');
+      console.log('   Is Approving:', isApproving);
       console.log('   Materials/Items:', updateData.materials || updateData.items);
       
-      const response = isPurchaseOrder
-        ? await purchaseOrderAPI.update(selectedIndent._id, updateData)
-        : await indentAPI.update(selectedIndent._id, updateData);
+      let response;
+      
+      if (isApproving) {
+        // If approving, call approval endpoint which groups by vendor
+        console.log('✅ Status changed to approved - calling approval endpoint');
+        response = isPurchaseOrder
+          ? await purchaseOrderAPI.approve(selectedIndent._id)
+          : await indentAPI.approve(selectedIndent._id);
+        
+        showToast(`${isPurchaseOrder ? 'Purchase Order' : 'Indent'} approved! Deliveries grouped by vendor.`, 'success');
+      } else {
+        // Regular update
+        response = isPurchaseOrder
+          ? await purchaseOrderAPI.update(selectedIndent._id, updateData)
+          : await indentAPI.update(selectedIndent._id, updateData);
+      }
       
       console.log('📥 Received response:', response);
       
