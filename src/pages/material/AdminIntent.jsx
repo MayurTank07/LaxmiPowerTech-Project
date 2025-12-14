@@ -54,9 +54,17 @@ export default function AdminIntent() {
       console.log('✅ Fetched sites from backend:', sitesList);
       
       // Fetch vendors from backend
-      const vendorsList = await vendorsAPI.getAll();
-      setVendors(vendorsList || []);
-      console.log('✅ Fetched vendors from backend:', vendorsList.length, 'vendors');
+      try {
+        const vendorsList = await vendorsAPI.getAll();
+        setVendors(vendorsList || []);
+        console.log('✅ Fetched vendors from backend:', vendorsList?.length || 0, 'vendors');
+      } catch (vendorError) {
+        console.error('❌ Failed to fetch vendors:', vendorError.response?.status, vendorError.message);
+        if (vendorError.response?.status === 404) {
+          console.warn('⚠️ Vendors endpoint not found (404). Please ensure backend server is running and /api/vendors route is registered.');
+        }
+        setVendors([]); // Set empty array to prevent undefined errors
+      }
     } catch (err) {
       console.error('Error fetching materials, sites, and vendors:', err);
       // Fallback to empty array if fetch fails

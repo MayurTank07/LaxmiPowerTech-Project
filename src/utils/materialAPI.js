@@ -239,8 +239,16 @@ export const branchesAPI = {
 // Vendors API
 export const vendorsAPI = {
   getAll: async () => {
-    const response = await axios.get('/vendors');
-    return response.data;
+    try {
+      console.log('🔍 Fetching vendors from /api/vendors');
+      const response = await axios.get('/vendors');
+      console.log('✅ Vendors fetched successfully:', response.data?.length || 0, 'vendors');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error fetching vendors:', error.response?.status, error.response?.data || error.message);
+      console.error('Request URL:', error.config?.url);
+      throw error;
+    }
   },
   
   create: async (data) => {
