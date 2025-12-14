@@ -104,6 +104,11 @@ export default function MaterialTransfer({ isTabView = false }) {
       if (response.success) {
         let transfersData = response.data || [];
         
+        // ✅ CRITICAL: Hide transferred items (they should only appear in Upcoming Deliveries)
+        transfersData = transfersData.filter(transfer => 
+          transfer.status?.toLowerCase() !== 'transferred'
+        );
+        
         // ✅ Apply filters client-side
         if (filterSite) {
           transfersData = transfersData.filter(transfer => 
@@ -239,7 +244,6 @@ export default function MaterialTransfer({ isTabView = false }) {
               <option value="" className="text-gray-500">All Status</option>
               <option value="pending" className="text-gray-900">Pending</option>
               <option value="approved" className="text-gray-900">Approved</option>
-              <option value="transferred" className="text-gray-900">Transferred</option>
               <option value="cancelled" className="text-gray-900">Cancelled</option>
             </select>
           </div>
