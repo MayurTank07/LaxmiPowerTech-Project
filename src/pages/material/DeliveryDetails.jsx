@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, Upload, X } from "lucide-react";
 
@@ -12,9 +12,24 @@ export default function DeliveryDetails() {
     const [imagePreview, setImagePreview] = useState([]);
     const [isEditMode, setIsEditMode] = useState(false);
 
+    // ✅ Fix: Move navigate to useEffect to avoid render-phase navigation
+    useEffect(() => {
+        if (!item || !type) {
+            console.warn('⚠️ DeliveryDetails: Missing item or type, redirecting...');
+            navigate('/dashboard/material');
+        }
+    }, [item, type, navigate]);
+
+    // Show loading while checking for data
     if (!item || !type) {
-        navigate("/"); // fallback if accessed directly
-        return null;
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading delivery details...</p>
+                </div>
+            </div>
+        );
     }
 
     const handleCheckbox = (id, checked) => {
