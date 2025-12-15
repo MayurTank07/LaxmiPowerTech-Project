@@ -10,6 +10,7 @@ export default function DeliveryDetails() {
     const [materials, setMaterials] = useState(item?.materials || []);
     const [deliveryImages, setDeliveryImages] = useState([]);
     const [imagePreview, setImagePreview] = useState([]);
+    const [isEditMode, setIsEditMode] = useState(false);
 
     if (!item || !type) {
         navigate("/"); // fallback if accessed directly
@@ -93,12 +94,14 @@ export default function DeliveryDetails() {
                                             <div className="flex-1">
                                                 <p className="text-sm font-medium text-gray-900">{m.name}</p>
                                             </div>
-                                            <input
-                                                type="checkbox"
-                                                checked={m.receivedQty >= m.poQty}
-                                                onChange={(e) => handleCheckbox(m.id, e.target.checked)}
-                                                className="w-5 h-5 accent-orange-500 cursor-pointer"
-                                            />
+                                            {isEditMode && (
+                                                <input
+                                                    type="checkbox"
+                                                    checked={m.receivedQty >= m.poQty}
+                                                    onChange={(e) => handleCheckbox(m.id, e.target.checked)}
+                                                    className="w-5 h-5 accent-orange-500 cursor-pointer"
+                                                />
+                                            )}
                                         </div>
                                         
                                         <div className="grid grid-cols-2 gap-3">
@@ -116,7 +119,8 @@ export default function DeliveryDetails() {
                             </div>
                         </div>
 
-                        {/* Delivery Proof Upload */}
+                        {/* Delivery Proof Upload - Only in Edit Mode */}
+                        {isEditMode && (
                         <div className="bg-white rounded-lg border p-4">
                             <h2 className="font-semibold text-gray-900 mb-3">Delivery Proof (Optional)</h2>
                             
@@ -158,26 +162,51 @@ export default function DeliveryDetails() {
                             </label>
                             <p className="text-xs text-gray-500 mt-2">Upload images of delivery challan or proof</p>
                         </div>
+                        )}
                     </div>
                 </div>
 
                 {/* Fixed Bottom Buttons */}
                 <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
                     <div className="max-w-[390px] mx-auto px-4 py-3">
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => navigate(-1)}
-                                className="flex-1 bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-300 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleSubmit}
-                                className="flex-1 bg-orange-500 text-white font-semibold py-3 rounded-lg hover:bg-orange-600 transition-colors shadow-md"
-                            >
-                                Submit
-                            </button>
-                        </div>
+                        {!isEditMode ? (
+                            // View mode: Show only Edit button (No Delete)
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => navigate(-1)}
+                                    className="flex-1 bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-300 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => setIsEditMode(true)}
+                                    className="flex-1 bg-orange-500 text-white font-semibold py-3 rounded-lg hover:bg-orange-600 transition-colors shadow-md"
+                                >
+                                    Edit
+                                </button>
+                            </div>
+                        ) : (
+                            // Edit mode: Show Cancel and Submit buttons
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => {
+                                        setIsEditMode(false);
+                                        setMaterials(item?.materials || []);
+                                        setDeliveryImages([]);
+                                        setImagePreview([]);
+                                    }}
+                                    className="flex-1 bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-300 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSubmit}
+                                    className="flex-1 bg-orange-500 text-white font-semibold py-3 rounded-lg hover:bg-orange-600 transition-colors shadow-md"
+                                >
+                                    Submit
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
