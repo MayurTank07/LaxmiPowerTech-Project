@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FaArrowLeft } from "react-icons/fa";
+import { ArrowLeft, FileText, Truck, Package, ClipboardCheck } from "lucide-react";
 import Intent from "./Intent";
 import MaterialTransfer from "./MaterialTransfer";
 import UpcomingDeliveries from "./UpcomingDeliveries";
@@ -24,10 +24,10 @@ export default function Material({ activeTab }) {
   const currentTab = getCurrentTab();
 
   const tabs = [
-    { name: 'Intent', path: '/material/intent', key: 'intent' },
-    { name: 'Material Transfer', path: '/material/transfer', key: 'transfer' },
-    { name: 'Upcoming Deliveries', path: '/material/deliveries', key: 'deliveries' },
-    { name: 'GRN', path: '/material/grn', key: 'grn' },
+    { name: 'Intent', path: '/material/intent', key: 'intent', icon: FileText, color: 'blue' },
+    { name: 'Material Transfer', path: '/material/transfer', key: 'transfer', icon: Truck, color: 'orange' },
+    { name: 'Upcoming Deliveries', path: '/material/deliveries', key: 'deliveries', icon: Package, color: 'purple' },
+    { name: 'GRN', path: '/material/grn', key: 'grn', icon: ClipboardCheck, color: 'green' },
   ];
 
   const renderContent = () => {
@@ -46,53 +46,68 @@ export default function Material({ activeTab }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
       {/* Container with consistent mobile width */}
-      <div className="max-w-md mx-auto min-h-screen bg-white shadow-xl">
-        {/* Header with Gradient */}
-        <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 pt-6 pb-6 rounded-b-3xl shadow-lg relative">
-          <button
-            className="absolute top-6 left-6 text-white flex items-center gap-2 hover:bg-white/20 px-3 py-1.5 rounded-full transition-all"
-            onClick={() => navigate('/dashboard')}
-          >
-            <FaArrowLeft size={16} />
-            <span className="text-sm font-medium">Back</span>
-          </button>
-
-          <div className="text-center pt-8">
-            <h1 className="text-white text-2xl font-bold mb-2">Material Management</h1>
-            <p className="text-white/80 text-sm">{user?.name || 'User'}</p>
+      <div className="max-w-md mx-auto min-h-screen bg-white shadow-2xl">
+        {/* Modern Header */}
+        <div className="bg-gradient-to-r from-orange-500 via-orange-600 to-orange-500 px-4 pt-4 pb-3 shadow-lg">
+          <div className="flex items-center justify-between mb-3">
+            <button
+              className="flex items-center gap-2 text-white hover:bg-white/20 px-3 py-2 rounded-lg transition-all"
+              onClick={() => navigate('/dashboard')}
+            >
+              <ArrowLeft size={18} />
+              <span className="text-sm font-semibold">Back</span>
+            </button>
+            <div className="text-right">
+              <p className="text-white/90 text-xs font-medium">{user?.name || 'User'}</p>
+            </div>
+          </div>
+          <div className="text-center">
+            <h1 className="text-white text-xl font-bold">Material Management</h1>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="bg-white px-4 py-3 -mt-2">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => navigate(tab.path)}
-                className={`px-4 py-2 text-xs font-semibold whitespace-nowrap rounded-lg transition-all ${
-                  currentTab === tab.key
-                    ? 'bg-gray-800 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-sm'
-                }`}
-              >
-                {tab.name}
-              </button>
-            ))}
+        {/* Professional Tab Navigation */}
+        <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+          <div className="flex overflow-x-auto scrollbar-hide">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = currentTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => navigate(tab.path)}
+                  className={`flex-1 min-w-[90px] px-3 py-3 flex flex-col items-center gap-1.5 transition-all relative ${
+                    isActive
+                      ? 'text-orange-600 bg-orange-50'
+                      : 'text-gray-600 hover:text-orange-500 hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon size={20} className={isActive ? 'stroke-[2.5]' : 'stroke-[2]'} />
+                  <span className={`text-[10px] font-semibold leading-tight text-center ${
+                    isActive ? 'text-orange-600' : 'text-gray-600'
+                  }`}>
+                    {tab.name}
+                  </span>
+                  {isActive && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600"></div>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Content Area */}
-        <div className="bg-white pb-20">
+        <div className="bg-gray-50 min-h-[calc(100vh-180px)]">
           {renderContent()}
         </div>
 
         {/* Footer */}
-        <div className="px-6 pb-6 pt-2">
+        <div className="bg-white border-t border-gray-200 py-3">
           <div className="text-center">
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-500 font-medium">
               Powered by Laxmi Power Tech
             </p>
           </div>
