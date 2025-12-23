@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { upcomingDeliveryAPI, branchesAPI } from '../../utils/materialAPI';
-import { Eye, Trash2, X, Package, Calendar, MapPin, User, FileText } from 'lucide-react';
+import { Eye, Trash2, X, Package, Calendar, MapPin, User, FileText, Edit2, Save, XCircle, DollarSign, Receipt } from 'lucide-react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 
 export default function AdminGRN() {
@@ -11,6 +11,15 @@ export default function AdminGRN() {
   const [search, setSearch] = useState('');
   const [selectedDelivery, setSelectedDelivery] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [billingData, setBillingData] = useState({
+    invoiceNumber: '',
+    price: 0,
+    billDate: '',
+    discount: 0,
+    amount: 0
+  });
+  const [isSaving, setIsSaving] = useState(false);
   
   // Filter states
   const [filterSite, setFilterSite] = useState('');
@@ -104,6 +113,71 @@ export default function AdminGRN() {
   const handleViewDetails = (delivery) => {
     setSelectedDelivery(delivery);
     setShowDetailsModal(true);
+    setIsEditMode(false);
+    
+    // Initialize billing data
+    setBillingData({
+      invoiceNumber: delivery.billing?.invoiceNumber || '',
+      price: delivery.billing?.price || 0,
+      billDate: delivery.billing?.billDate ? new Date(delivery.billing.billDate).toISOString().split('T')[0] : '',
+      discount: delivery.billing?.discount || 0,
+      amount: delivery.billing?.amount || 0
+    });
+  };
+
+  const handleEditClick = () => {
+    setIsEditMode(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    // Reset billing data to original values
+    setBillingData({
+      invoiceNumber: selectedDelivery.billing?.invoiceNumber || '',
+      price: selectedDelivery.billing?.price || 0,
+      billDate: selectedDelivery.billing?.billDate ? new Date(selectedDelivery.billing.billDate).toISOString().split('T')[0] : '',
+      discount: selectedDelivery.billing?.discount || 0,
+      amount: selectedDelivery.billing?.amount || 0
+    });
+  };
+
+  const handleBillingChange = (field, value) => {
+    const updatedData = { ...billingData, [field]: value };
+    
+    // Auto-calculate amount when price or discount changes
+    if (field === 'price' || field === 'discount') {
+      const price = parseFloat(field === 'price' ? value : updatedData.price) || 0;
+      const discount = parseFloat(field === 'discount' ? value : updatedData.discount) || 0;
+      updatedData.amount = price - discount;
+    }
+    
+    setBillingData(updatedData);
+  };
+
+  const handleSaveBilling = async () => {
+    try {
+      setIsSaving(true);
+      
+      const response = await upcomingDeliveryAPI.updateBilling(selectedDelivery._id, billingData);
+      
+      if (response.success) {
+        // Update local state
+        setSelectedDelivery(response.data);
+        
+        // Update deliveries list
+        setDeliveries(prev => prev.map(d => 
+          d._id === response.data._id ? response.data : d
+        ));
+        
+        setIsEditMode(false);
+        alert('Billing details updated successfully!');
+      }
+    } catch (err) {
+      console.error('Error updating billing:', err);
+      alert('Failed to update billing details. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -340,6 +414,127 @@ export default function AdminGRN() {
                   <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedDelivery.status)}`}>
                     {selectedDelivery.status}
                   </span>
+                </div>
+              </div>
+
+              {/* Billing Information Section */}
+              <div className="border rounded-lg p-4 bg-gradient-to-r from-orange-50 to-white">
+                <div className="flex justify-between items-center mb-4">
+                  <h4 className="text-md font-semibold text-gray-900 flex items-center gap-2">
+                    <Receipt size={18} className="text-orange-600" />
+                    Billing Information
+                  </h4>
+                  {!isEditMode ? (
+                    <button
+                      onClick={handleEditClick}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-orange-500 text-white text-sm font-medium rounded hover:bg-orange-600 transition-colors"
+                    >
+                      <Edit2 size={16} />
+                      Edit
+                    </button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleCancelEdit}
+                        disabled={isSaving}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-gray-200 text-gray-700 text-sm font-medium rounded hover:bg-gray-300 transition-colors disabled:opacity-50"
+                      >
+                        <XCircle size={16} />
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSaveBilling}
+                        disabled={isSaving}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded hover:bg-green-600 transition-colors disabled:opacity-50"
+                      >
+                        <Save size={16} />
+                        {isSaving ? 'Saving...' : 'Save'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Invoice Number */}
+                  <div>
+                    <label className="text-sm font-medium text-gray-600 block mb-1">Invoice Number</label>
+                    {isEditMode ? (
+                      <input
+                        type="text"
+                        value={billingData.invoiceNumber}
+                        onChange={(e) => handleBillingChange('invoiceNumber', e.target.value)}
+                        className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        placeholder="Enter invoice number"
+                      />
+                    ) : (
+                      <p className="text-gray-900 font-medium">{billingData.invoiceNumber || 'Not set'}</p>
+                    )}
+                  </div>
+
+                  {/* Bill Date */}
+                  <div>
+                    <label className="text-sm font-medium text-gray-600 block mb-1">Bill Date</label>
+                    {isEditMode ? (
+                      <input
+                        type="date"
+                        value={billingData.billDate}
+                        onChange={(e) => handleBillingChange('billDate', e.target.value)}
+                        className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      />
+                    ) : (
+                      <p className="text-gray-900 font-medium">
+                        {billingData.billDate ? new Date(billingData.billDate).toLocaleDateString('en-IN') : 'Not set'}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Price */}
+                  <div>
+                    <label className="text-sm font-medium text-gray-600 block mb-1">Price (₹)</label>
+                    {isEditMode ? (
+                      <input
+                        type="number"
+                        value={billingData.price}
+                        onChange={(e) => handleBillingChange('price', e.target.value)}
+                        className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        placeholder="0.00"
+                        step="0.01"
+                        min="0"
+                      />
+                    ) : (
+                      <p className="text-gray-900 font-medium">₹{billingData.price.toFixed(2)}</p>
+                    )}
+                  </div>
+
+                  {/* Discount */}
+                  <div>
+                    <label className="text-sm font-medium text-gray-600 block mb-1">Discount (₹)</label>
+                    {isEditMode ? (
+                      <input
+                        type="number"
+                        value={billingData.discount}
+                        onChange={(e) => handleBillingChange('discount', e.target.value)}
+                        className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        placeholder="0.00"
+                        step="0.01"
+                        min="0"
+                      />
+                    ) : (
+                      <p className="text-gray-900 font-medium">₹{billingData.discount.toFixed(2)}</p>
+                    )}
+                  </div>
+
+                  {/* Amount (Auto-calculated) */}
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-gray-600 block mb-1 flex items-center gap-2">
+                      <DollarSign size={16} className="text-green-600" />
+                      Total Amount (Auto-calculated)
+                    </label>
+                    <div className="bg-green-50 border-2 border-green-200 rounded px-4 py-3">
+                      <p className="text-2xl font-bold text-green-700">₹{billingData.amount.toFixed(2)}</p>
+                      <p className="text-xs text-gray-600 mt-1">Price - Discount = Amount</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 

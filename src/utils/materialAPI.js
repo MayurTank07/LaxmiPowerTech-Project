@@ -232,6 +232,12 @@ export const upcomingDeliveryAPI = {
   migrateSync: async () => {
     const response = await axios.post('/material/upcoming-deliveries/migrate-sync');
     return response.data;
+  },
+
+  // ✅ Update GRN billing details
+  updateBilling: async (id, billingData) => {
+    const response = await axios.put(`/material/upcoming-deliveries/${id}/billing`, billingData);
+    return response.data;
   }
 };
 
