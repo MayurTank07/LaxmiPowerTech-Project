@@ -232,40 +232,92 @@ export default function DeliveryDetails() {
                             <h2 className="font-semibold text-gray-900 mb-3">Materials ({materials.length})</h2>
                             
                             <div className="space-y-3">
-                                {materials.map((m) => {
+                                {materials.map((m, index) => {
                                     const itemId = m.itemId || m._id;
-                                    const itemName = m.name || m.itemName || 'Unknown';
+                                    
+                                    // ✅ Build material name from category hierarchy
+                                    const category = m.category || '';
+                                    const subCategory = m.subCategory || '';
+                                    const subCategory1 = m.subCategory1 || '';
+                                    const subCategory2 = m.subCategory2 || '';
+                                    
+                                    // Build full material name
+                                    let materialName = m.materialName || m.itemName || m.name || '';
+                                    
+                                    // If no materialName, build from categories
+                                    if (!materialName && category) {
+                                        const parts = [category, subCategory, subCategory1, subCategory2].filter(Boolean);
+                                        materialName = parts.join(' - ');
+                                    }
+                                    
+                                    // Fallback if still no name
+                                    if (!materialName) {
+                                        materialName = 'Material Item';
+                                    }
+                                    
                                     const requestedQty = m.quantity || m.st_quantity || 0;
                                     const receivedQty = m.received_quantity || 0;
                                     const isReceived = m.is_received || false;
+                                    const unit = m.unit || 'units';
                                     
                                     return (
                                     <div
-                                        key={itemId}
-                                        className="bg-white rounded-lg border border-gray-200 p-4"
+                                        key={itemId || index}
+                                        className="bg-gradient-to-r from-gray-50 to-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow"
                                     >
                                         <div className="flex items-start justify-between mb-3">
                                             <div className="flex-1">
-                                                <p className="text-sm font-medium text-gray-900">{itemName}</p>
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="text-xs font-bold text-gray-500">#{index + 1}</span>
+                                                    <p className="text-sm font-bold text-gray-900">{materialName}</p>
+                                                </div>
+                                                
+                                                {/* ✅ Show category hierarchy if available */}
+                                                {category && (
+                                                    <div className="space-y-1 mt-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs text-gray-500 font-medium">Category:</span>
+                                                            <span className="text-xs text-gray-900 font-semibold bg-blue-50 px-2 py-0.5 rounded">{category}</span>
+                                                        </div>
+                                                        {subCategory && (
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs text-gray-500 font-medium">Sub Category:</span>
+                                                                <span className="text-xs text-gray-900 font-semibold bg-purple-50 px-2 py-0.5 rounded">{subCategory}</span>
+                                                            </div>
+                                                        )}
+                                                        {subCategory1 && (
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs text-gray-500 font-medium">Sub Category 1:</span>
+                                                                <span className="text-xs text-gray-900 font-semibold bg-green-50 px-2 py-0.5 rounded">{subCategory1}</span>
+                                                            </div>
+                                                        )}
+                                                        {subCategory2 && (
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs text-gray-500 font-medium">Sub Category 2:</span>
+                                                                <span className="text-xs text-gray-900 font-semibold bg-orange-50 px-2 py-0.5 rounded">{subCategory2}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                             {isEditMode && (
                                                 <input
                                                     type="checkbox"
                                                     checked={isReceived && receivedQty >= requestedQty}
                                                     onChange={(e) => handleCheckbox(itemId, e.target.checked)}
-                                                    className="w-5 h-5 accent-orange-500 cursor-pointer"
+                                                    className="w-5 h-5 accent-orange-500 cursor-pointer flex-shrink-0 mt-1"
                                                 />
                                             )}
                                         </div>
                                         
-                                        <div className="grid grid-cols-2 gap-3">
+                                        <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-gray-200">
                                             <div>
-                                                <label className="text-xs text-gray-500 block mb-1">Requested</label>
-                                                <p className="text-sm font-medium text-orange-600">{requestedQty}</p>
+                                                <label className="text-xs text-gray-500 font-medium block mb-1">Requested</label>
+                                                <p className="text-sm font-bold text-orange-600">{requestedQty} {unit}</p>
                                             </div>
                                             <div>
-                                                <label className="text-xs text-gray-500 block mb-1">Received</label>
-                                                <p className="text-sm font-medium text-gray-900">{receivedQty}</p>
+                                                <label className="text-xs text-gray-500 font-medium block mb-1">Received</label>
+                                                <p className="text-sm font-bold text-green-600">{receivedQty} {unit}</p>
                                             </div>
                                         </div>
                                     </div>
