@@ -194,7 +194,13 @@ export default function AdminGRN() {
   const handleMaterialBillingChange = (materialId, field, value) => {
     const updatedMaterialBilling = billingData.materialBilling.map(material => {
       if (material.materialId === materialId) {
-        const updatedMaterial = { ...material, [field]: value };
+        // Parse numeric values immediately
+        let updatedValue = value;
+        if (field === 'price' || field === 'discount') {
+          updatedValue = parseFloat(value) || 0;
+        }
+        
+        const updatedMaterial = { ...material, [field]: updatedValue };
         
         // Recalculate total amount for this material
         const price = parseFloat(updatedMaterial.price) || 0;
@@ -206,6 +212,10 @@ export default function AdminGRN() {
         } else {
           updatedMaterial.totalAmount = Math.max(0, price - discount);
         }
+        
+        // Ensure all numeric fields are numbers
+        updatedMaterial.price = price;
+        updatedMaterial.discount = discount;
         
         return updatedMaterial;
       }
@@ -226,7 +236,34 @@ export default function AdminGRN() {
     try {
       setIsSaving(true);
       
-      const response = await upcomingDeliveryAPI.updateBilling(selectedDelivery._id, billingData);
+      // Validate billing data
+      const hasInvalidData = billingData.materialBilling.some(material => {
+        const price = parseFloat(material.price);
+        const discount = parseFloat(material.discount);
+        return isNaN(price) || isNaN(discount) || price < 0 || discount < 0;
+      });
+      
+      if (hasInvalidData) {
+        alert('Please enter valid price and discount values for all materials.');
+        setIsSaving(false);
+        return;
+      }
+      
+      // Ensure all numeric values are properly formatted
+      const sanitizedBillingData = {
+        ...billingData,
+        materialBilling: billingData.materialBilling.map(material => ({
+          ...material,
+          price: parseFloat(material.price) || 0,
+          discount: parseFloat(material.discount) || 0,
+          totalAmount: parseFloat(material.totalAmount) || 0
+        })),
+        totalPrice: parseFloat(billingData.totalPrice) || 0,
+        totalDiscount: parseFloat(billingData.totalDiscount) || 0,
+        finalAmount: parseFloat(billingData.finalAmount) || 0
+      };
+      
+      const response = await upcomingDeliveryAPI.updateBilling(selectedDelivery._id, sanitizedBillingData);
       
       if (response.success) {
         // Update local state
@@ -258,6 +295,18 @@ export default function AdminGRN() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  // Safe number formatting helper
+  const formatCurrency = (value) => {
+    const num = parseFloat(value);
+    if (isNaN(num)) return '₹0.00';
+    return `₹${num.toFixed(2)}`;
+  };
+
+  const safeNumber = (value) => {
+    const num = parseFloat(value);
+    return isNaN(num) ? 0 : num;
   };
 
   const getStatusColor = (status) => {
@@ -409,7 +458,7 @@ export default function AdminGRN() {
                         {delivery.billing?.invoiceNumber || '-'}
                       </td>
                       <td className="border px-4 py-2 bg-orange-50 font-semibold text-gray-900">
-                        {delivery.billing?.totalPrice ? `₹${delivery.billing.totalPrice.toFixed(2)}` : '-'}
+                        {delivery.billing?.totalPrice ? formatCurrency(delivery.billing.totalPrice) : '-'}
                       </td>
                       <td className="border px-4 py-2 bg-orange-50 text-gray-700">
                         {delivery.billing?.billDate 
@@ -422,11 +471,11 @@ export default function AdminGRN() {
                       </td>
                       <td className="border px-4 py-2 bg-orange-50 text-gray-900">
                         {delivery.billing?.totalDiscount 
-                          ? `₹${delivery.billing.totalDiscount.toFixed(2)}`
+                          ? formatCurrency(delivery.billing.totalDiscount)
                           : '-'}
                       </td>
                       <td className="border px-4 py-2 bg-orange-50 font-bold text-green-700">
-                        {delivery.billing?.finalAmount ? `₹${delivery.billing.finalAmount.toFixed(2)}` : '-'}
+                        {delivery.billing?.finalAmount ? formatCurrency(delivery.billing.finalAmount) : '-'}
                       </td>
                       
                       <td className="border px-4 py-2">
@@ -586,15 +635,15 @@ export default function AdminGRN() {
                 <div className="grid grid-cols-3 gap-4 p-4 bg-white rounded-lg border-2 border-orange-200">
                   <div className="text-center">
                     <p className="text-xs font-semibold text-gray-600 mb-1">Total Price</p>
-                    <p className="text-xl font-bold text-blue-700">₹{billingData.totalPrice.toFixed(2)}</p>
+                    <p className="text-xl font-bold text-blue-700">{formatCurrency(billingData.totalPrice)}</p>
                   </div>
                   <div className="text-center border-x-2 border-orange-200">
                     <p className="text-xs font-semibold text-gray-600 mb-1">Total Discount</p>
-                    <p className="text-xl font-bold text-red-600">₹{billingData.totalDiscount.toFixed(2)}</p>
+                    <p className="text-xl font-bold text-red-600">{formatCurrency(billingData.totalDiscount)}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-xs font-semibold text-gray-600 mb-1">Final Amount</p>
-                    <p className="text-2xl font-bold text-green-700">₹{billingData.finalAmount.toFixed(2)}</p>
+                    <p className="text-2xl font-bold text-green-700">{formatCurrency(billingData.finalAmount)}</p>
                   </div>
                 </div>
               </div>
@@ -625,7 +674,7 @@ export default function AdminGRN() {
                             {isEditMode ? (
                               <input
                                 type="number"
-                                value={material.price}
+                                value={safeNumber(material.price)}
                                 onChange={(e) => handleMaterialBillingChange(material.materialId, 'price', e.target.value)}
                                 className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-500"
                                 placeholder="0.00"
@@ -633,14 +682,14 @@ export default function AdminGRN() {
                                 min="0"
                               />
                             ) : (
-                              <span className="font-semibold text-gray-900">₹{material.price.toFixed(2)}</span>
+                              <span className="font-semibold text-gray-900">{formatCurrency(material.price)}</span>
                             )}
                           </td>
                           <td className="border px-4 py-3">
                             {isEditMode ? (
                               <div className="flex gap-2">
                                 <select
-                                  value={material.discountType}
+                                  value={material.discountType || 'flat'}
                                   onChange={(e) => handleMaterialBillingChange(material.materialId, 'discountType', e.target.value)}
                                   className="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-500"
                                 >
@@ -649,7 +698,7 @@ export default function AdminGRN() {
                                 </select>
                                 <input
                                   type="number"
-                                  value={material.discount}
+                                  value={safeNumber(material.discount)}
                                   onChange={(e) => handleMaterialBillingChange(material.materialId, 'discount', e.target.value)}
                                   className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-500"
                                   placeholder="0"
@@ -660,14 +709,14 @@ export default function AdminGRN() {
                               </div>
                             ) : (
                               <span className="text-gray-900">
-                                {material.discount > 0 
-                                  ? `${material.discount}${material.discountType === 'percentage' ? '%' : '₹'}`
+                                {safeNumber(material.discount) > 0 
+                                  ? `${safeNumber(material.discount)}${material.discountType === 'percentage' ? '%' : '₹'}`
                                   : '-'}
                               </span>
                             )}
                           </td>
                           <td className="border px-4 py-3 bg-green-50">
-                            <span className="font-bold text-green-700 text-lg">₹{material.totalAmount.toFixed(2)}</span>
+                            <span className="font-bold text-green-700 text-lg">{formatCurrency(material.totalAmount)}</span>
                           </td>
                         </tr>
                       ))}
