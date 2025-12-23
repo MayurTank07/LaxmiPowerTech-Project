@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { Search, Eye, Package, Receipt, Edit2, Save, XCircle, DollarSign, Download, FileText, FileSpreadsheet, Trash2, X, Calendar, MapPin, User } from 'lucide-react';
 import { upcomingDeliveryAPI, branchesAPI } from '../../utils/materialAPI';
-import { Eye, Trash2, X, Package, Calendar, MapPin, User, FileText, Edit2, Save, XCircle, DollarSign, Receipt } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import DashboardLayout from '../../layouts/DashboardLayout';
 
 export default function AdminGRN() {
@@ -28,6 +31,7 @@ export default function AdminGRN() {
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
   const [sites, setSites] = useState([]);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   useEffect(() => {
     fetchGRNRecords();
@@ -236,7 +240,7 @@ export default function AdminGRN() {
     try {
       setIsSaving(true);
       
-      // Validate billing data
+      // Validate billing data - ensure all materials have prices
       const hasInvalidData = billingData.materialBilling.some(material => {
         const price = parseFloat(material.price);
         const discount = parseFloat(material.discount);
@@ -249,9 +253,27 @@ export default function AdminGRN() {
         return;
       }
       
+      // Check if all materials have prices entered
+      const allPricesEntered = billingData.materialBilling.every(material => {
+        const price = parseFloat(material.price);
+        return price > 0;
+      });
+      
+      if (!allPricesEntered) {
+        alert('Please enter prices for all materials before saving the bill.');
+        setIsSaving(false);
+        return;
+      }
+      
+      // Auto-generate invoice number and set current date-time
+      const autoInvoiceNumber = extractBasePOId(selectedDelivery.transfer_number || selectedDelivery.st_id);
+      const currentDateTime = new Date().toISOString();
+      
       // Ensure all numeric values are properly formatted
       const sanitizedBillingData = {
         ...billingData,
+        invoiceNumber: autoInvoiceNumber,  // Assign bill number on save
+        billDate: currentDateTime,  // Set current date-time on save
         materialBilling: billingData.materialBilling.map(material => ({
           ...material,
           price: parseFloat(material.price) || 0,
@@ -275,7 +297,7 @@ export default function AdminGRN() {
         ));
         
         setIsEditMode(false);
-        alert('Billing details updated successfully!');
+        alert('Bill saved successfully! Invoice number and date-time have been assigned.');
       }
     } catch (err) {
       console.error('Error updating billing:', err);
@@ -320,6 +342,153 @@ export default function AdminGRN() {
     }
   };
 
+  // Export to Excel
+  const handleExportExcel = () => {
+    try {
+      // Prepare data for export
+      const exportData = deliveries.map((delivery, index) => ({
+        'Sr. No.': index + 1,
+        'Type': delivery.type === 'PO' ? 'Purchase Order' : 'Site Transfer',
+        'Transfer ID': delivery.transfer_number || delivery.st_id || 'N/A',
+        'From': delivery.from || 'N/A',
+        'To': delivery.to || 'N/A',
+        'Created By': delivery.createdBy || 'N/A',
+        'Invoice Number': delivery.billing?.invoiceNumber || '-',
+        'Total Price': delivery.billing?.totalPrice ? `₹${delivery.billing.totalPrice.toFixed(2)}` : '-',
+        'Bill Date': delivery.billing?.billDate 
+          ? new Date(delivery.billing.billDate).toLocaleDateString('en-IN')
+          : '-',
+        'Total Discount': delivery.billing?.totalDiscount 
+          ? `₹${delivery.billing.totalDiscount.toFixed(2)}`
+          : '-',
+        'Final Amount': delivery.billing?.finalAmount 
+          ? `₹${delivery.billing.finalAmount.toFixed(2)}`
+          : '-',
+        'Status': delivery.status || 'N/A',
+        'Created Date': formatDate(delivery.createdAt),
+        'Delivery Date': formatDate(delivery.updatedAt)
+      }));
+
+      // Create worksheet
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      
+      // Set column widths
+      const colWidths = [
+        { wch: 8 },  // Sr. No.
+        { wch: 15 }, // Type
+        { wch: 20 }, // Transfer ID
+        { wch: 15 }, // From
+        { wch: 15 }, // To
+        { wch: 15 }, // Created By
+        { wch: 18 }, // Invoice Number
+        { wch: 15 }, // Total Price
+        { wch: 15 }, // Bill Date
+        { wch: 15 }, // Total Discount
+        { wch: 15 }, // Final Amount
+        { wch: 12 }, // Status
+        { wch: 20 }, // Created Date
+        { wch: 20 }  // Delivery Date
+      ];
+      ws['!cols'] = colWidths;
+
+      // Create workbook
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'GRN Records');
+
+      // Generate filename with current date
+      const filename = `GRN_Records_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+      // Save file
+      XLSX.writeFile(wb, filename);
+      
+      setShowExportMenu(false);
+      alert('Excel file exported successfully!');
+    } catch (error) {
+      console.error('Export to Excel error:', error);
+      alert('Failed to export Excel file. Please try again.');
+    }
+  };
+
+  // Export to PDF
+  const handleExportPDF = () => {
+    try {
+      const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation
+      
+      // Add title
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('GRN Records', 14, 15);
+      
+      // Add export date
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Export Date: ${new Date().toLocaleDateString('en-IN')}`, 14, 22);
+      
+      // Prepare table data
+      const tableData = deliveries.map((delivery, index) => [
+        index + 1,
+        delivery.type === 'PO' ? 'PO' : 'ST',
+        delivery.transfer_number || delivery.st_id || 'N/A',
+        delivery.from || 'N/A',
+        delivery.to || 'N/A',
+        delivery.billing?.invoiceNumber || '-',
+        delivery.billing?.totalPrice ? `₹${delivery.billing.totalPrice.toFixed(2)}` : '-',
+        delivery.billing?.billDate 
+          ? new Date(delivery.billing.billDate).toLocaleDateString('en-IN')
+          : '-',
+        delivery.billing?.finalAmount 
+          ? `₹${delivery.billing.finalAmount.toFixed(2)}`
+          : '-',
+        delivery.status || 'N/A'
+      ]);
+
+      // Add table
+      doc.autoTable({
+        startY: 28,
+        head: [['Sr.', 'Type', 'Transfer ID', 'From', 'To', 'Invoice No.', 'Total Price', 'Bill Date', 'Final Amount', 'Status']],
+        body: tableData,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [251, 146, 60], // Orange color
+          textColor: 255,
+          fontStyle: 'bold',
+          fontSize: 9
+        },
+        bodyStyles: {
+          fontSize: 8
+        },
+        alternateRowStyles: {
+          fillColor: [255, 247, 237] // Light orange
+        },
+        columnStyles: {
+          0: { cellWidth: 10 },  // Sr.
+          1: { cellWidth: 15 },  // Type
+          2: { cellWidth: 35 },  // Transfer ID
+          3: { cellWidth: 25 },  // From
+          4: { cellWidth: 25 },  // To
+          5: { cellWidth: 30 },  // Invoice No.
+          6: { cellWidth: 25 },  // Total Price
+          7: { cellWidth: 25 },  // Bill Date
+          8: { cellWidth: 25 },  // Final Amount
+          9: { cellWidth: 20 }   // Status
+        },
+        margin: { left: 14, right: 14 }
+      });
+
+      // Generate filename with current date
+      const filename = `GRN_Records_${new Date().toISOString().split('T')[0]}.pdf`;
+
+      // Save PDF
+      doc.save(filename);
+      
+      setShowExportMenu(false);
+      alert('PDF file exported successfully!');
+    } catch (error) {
+      console.error('Export to PDF error:', error);
+      alert('Failed to export PDF file. Please try again.');
+    }
+  };
+
   return (
     <DashboardLayout title="GRN (Goods Receipt Note)">
       <div className="flex-1 p-6 bg-gray-50">
@@ -342,13 +511,45 @@ export default function AdminGRN() {
                 <h2 className="text-lg font-semibold text-gray-700">
                   GRN Records ({deliveries.length} records)
                 </h2>
-                <input
-                  type="text"
-                  placeholder="Search by ID, site..."
-                  className="border border-gray-300 rounded p-2 w-80 focus:ring-2 focus:ring-orange-400 text-sm"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
+                <div className="flex gap-3 items-center">
+                  <input
+                    type="text"
+                    placeholder="Search by ID, site..."
+                    className="border border-gray-300 rounded p-2 w-80 focus:ring-2 focus:ring-orange-400 text-sm"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                  
+                  {/* Export Button with Dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowExportMenu(!showExportMenu)}
+                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm shadow-md"
+                    >
+                      <Download size={18} />
+                      Export
+                    </button>
+                    
+                    {showExportMenu && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                        <button
+                          onClick={handleExportExcel}
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors text-left border-b border-gray-100"
+                        >
+                          <FileSpreadsheet size={18} className="text-green-600" />
+                          <span className="font-medium text-gray-700">Export as Excel</span>
+                        </button>
+                        <button
+                          onClick={handleExportPDF}
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors text-left"
+                        >
+                          <FileText size={18} className="text-red-600" />
+                          <span className="font-medium text-gray-700">Export as PDF</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Filters Section - Matching Intent PO */}
@@ -613,18 +814,21 @@ export default function AdminGRN() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-semibold text-gray-700 block mb-1">Bill Date</label>
+                    <label className="text-sm font-semibold text-gray-700 block mb-1">Bill Date & Time</label>
                     {isEditMode ? (
-                      <input
-                        type="date"
-                        value={billingData.billDate}
-                        onChange={(e) => setBillingData({ ...billingData, billDate: e.target.value })}
-                        className="w-full border-2 border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                      />
+                      <div className="bg-gray-100 border-2 border-gray-400 rounded-lg px-3 py-2">
+                        <p className="text-sm text-gray-600 italic">Auto-set on save</p>
+                      </div>
                     ) : (
                       <div className="bg-white border-2 border-orange-300 rounded px-3 py-2">
                         <p className="text-gray-900 font-medium">
-                          {billingData.billDate ? new Date(billingData.billDate).toLocaleDateString('en-IN') : 'Not set'}
+                          {billingData.billDate ? new Date(billingData.billDate).toLocaleString('en-IN', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }) : 'Not set'}
                         </p>
                       </div>
                     )}
@@ -676,8 +880,8 @@ export default function AdminGRN() {
                                 type="number"
                                 value={safeNumber(material.price)}
                                 onChange={(e) => handleMaterialBillingChange(material.materialId, 'price', e.target.value)}
-                                className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-500"
-                                placeholder="0.00"
+                                className="w-full border-2 border-blue-400 bg-white rounded-lg px-3 py-2 text-sm font-semibold text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-600 shadow-sm"
+                                placeholder="Enter price"
                                 step="0.01"
                                 min="0"
                               />
@@ -691,7 +895,7 @@ export default function AdminGRN() {
                                 <select
                                   value={material.discountType || 'flat'}
                                   onChange={(e) => handleMaterialBillingChange(material.materialId, 'discountType', e.target.value)}
-                                  className="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-500"
+                                  className="border-2 border-blue-400 bg-white rounded-lg px-3 py-2 text-sm font-semibold text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-600 shadow-sm"
                                 >
                                   <option value="flat">₹</option>
                                   <option value="percentage">%</option>
@@ -700,8 +904,8 @@ export default function AdminGRN() {
                                   type="number"
                                   value={safeNumber(material.discount)}
                                   onChange={(e) => handleMaterialBillingChange(material.materialId, 'discount', e.target.value)}
-                                  className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-orange-500"
-                                  placeholder="0"
+                                  className="flex-1 border-2 border-blue-400 bg-white rounded-lg px-3 py-2 text-sm font-semibold text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-600 shadow-sm"
+                                  placeholder="Enter discount"
                                   step={material.discountType === 'percentage' ? '1' : '0.01'}
                                   min="0"
                                   max={material.discountType === 'percentage' ? '100' : undefined}
