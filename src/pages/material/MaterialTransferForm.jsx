@@ -598,11 +598,34 @@ export default function MaterialTransferForm() {
             <div className="bg-gradient-to-r from-gray-50 to-white rounded-2xl p-5 border border-gray-100 shadow-sm">
               <h3 className="text-orange-600 font-bold text-sm mb-4">Materials</h3>
               
+              {/* Warning if From Site not selected */}
+              {!formData.fromSite && (
+                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-xs text-yellow-800 font-medium">
+                    ⚠️ Please select "From Site" first to load available materials from GRN
+                  </p>
+                </div>
+              )}
+              
+              {/* Show message if From Site selected but no materials in GRN */}
+              {formData.fromSite && grnMaterials.length === 0 && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-xs text-blue-700 font-medium">
+                    ℹ️ No materials found in {formData.fromSite} GRN. Please ensure materials have been delivered to this site first.
+                  </p>
+                </div>
+              )}
+              
               <button
                 type="button"
                 onClick={addMaterialRow}
-                className="w-full mb-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl font-semibold text-sm hover:from-orange-600 hover:to-orange-700 transition-all shadow-md hover:shadow-lg transform hover:scale-[1.02]"
-                disabled={submitting}
+                className={`w-full mb-4 py-3 rounded-xl font-semibold text-sm transition-all shadow-md ${
+                  !formData.fromSite || grnMaterials.length === 0
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 hover:shadow-lg transform hover:scale-[1.02]'
+                }`}
+                disabled={submitting || !formData.fromSite || grnMaterials.length === 0}
+                title={!formData.fromSite ? 'Please select From Site first' : grnMaterials.length === 0 ? 'No materials available in GRN' : 'Add material'}
               >
                 + Add Material
               </button>
