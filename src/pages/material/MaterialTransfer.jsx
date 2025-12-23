@@ -132,10 +132,11 @@ export default function MaterialTransfer({ isTabView = false }) {
       if (response.success) {
         let transfersData = response.data || [];
         
-        // ✅ CRITICAL: Hide transferred items (they should only appear in Upcoming Deliveries)
-        transfersData = transfersData.filter(transfer => 
-          transfer.status?.toLowerCase() !== 'transferred'
-        );
+        // ✅ CRITICAL: Hide transferred and approved items (they should only appear in Upcoming Deliveries)
+        transfersData = transfersData.filter(transfer => {
+          const status = transfer.status?.toLowerCase();
+          return status !== 'transferred' && status !== 'approved';
+        });
         
         // ✅ CRITICAL: Filter by user's assigned branches
         if (userAssignedBranches && userAssignedBranches.length > 0) {

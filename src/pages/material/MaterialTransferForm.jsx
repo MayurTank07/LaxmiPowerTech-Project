@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, X, Upload, ChevronDown } from 'lucide-react';
-import { siteTransferAPI, materialCatalogAPI as materialAPI } from '../../utils/materialAPI';
+import { siteTransferAPI, materialCatalogAPI as materialAPI, upcomingDeliveryAPI } from '../../utils/materialAPI';
 import { useNavigate } from 'react-router-dom';
 import axios from '../../utils/axios';
 
@@ -120,6 +120,7 @@ export default function MaterialTransferForm() {
   // Material options from backend
   const [categories, setCategories] = useState([]);
   const [allMaterials, setAllMaterials] = useState([]);
+  const [grnMaterials, setGrnMaterials] = useState([]); // ✅ Materials from GRN of selected From Site
   
   // Sites list for dropdowns
   const [fromSites, setFromSites] = useState([]); // ✅ Restricted to assigned branches
@@ -129,7 +130,79 @@ export default function MaterialTransferForm() {
   const [categorySearch, setCategorySearch] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
-  // ✅ FETCH MATERIALS AND SITES FROM BACKEND - EXACTLY LIKE INTENT FORM
+  // ✅ FETCH GRN MATERIALS WHEN FROM SITE CHANGES
+  useEffect(() => {
+    const fetchGRNMaterials = async () => {
+      if (!formData.fromSite) {
+        setGrnMaterials([]);
+        setCategories([]);
+        return;
+      }
+
+      try {
+        console.log('🔍 Fetching GRN materials for site:', formData.fromSite);
+        
+        // Fetch all GRN records (transferred deliveries)
+        const response = await upcomingDeliveryAPI.getAll(1, 1000, '');
+        
+        if (response.success) {
+          const allDeliveries = response.data || [];
+          
+          // Filter GRN records for the selected "From Site" (status = transferred, to = fromSite)
+          const grnRecords = allDeliveries.filter(delivery => 
+            delivery.status?.toLowerCase() === 'transferred' && 
+            delivery.to === formData.fromSite
+          );
+          
+          console.log('✅ Found', grnRecords.length, 'GRN records for', formData.fromSite);
+          
+          // Extract unique materials from GRN records
+          const materialsMap = new Map();
+          
+          grnRecords.forEach(grn => {
+            grn.items?.forEach(item => {
+              const key = `${item.category}|${item.subCategory || ''}|${item.subCategory1 || ''}|${item.subCategory2 || ''}`;
+              
+              if (!materialsMap.has(key)) {
+                materialsMap.set(key, {
+                  category: item.category,
+                  subCategory: item.subCategory || '',
+                  subCategory1: item.subCategory1 || '',
+                  subCategory2: item.subCategory2 || '',
+                  materialName: item.materialName,
+                  unit: item.unit || 'units',
+                  availableQuantity: 0
+                });
+              }
+              
+              // Sum up available quantity
+              const material = materialsMap.get(key);
+              material.availableQuantity += item.quantity || 0;
+            });
+          });
+          
+          const materials = Array.from(materialsMap.values());
+          setGrnMaterials(materials);
+          
+          // Extract unique categories
+          const uniqueCategories = [...new Set(materials.map(m => m.category).filter(Boolean))]
+            .sort((a, b) => a.localeCompare(b));
+          setCategories(uniqueCategories);
+          
+          console.log('✅ Extracted', materials.length, 'unique materials from GRN');
+          console.log('✅ Categories:', uniqueCategories);
+        }
+      } catch (err) {
+        console.error('❌ Error fetching GRN materials:', err);
+        setGrnMaterials([]);
+        setCategories([]);
+      }
+    };
+
+    fetchGRNMaterials();
+  }, [formData.fromSite]);
+
+  // ✅ FETCH SITES FROM BACKEND
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -180,16 +253,8 @@ export default function MaterialTransferForm() {
           }
         }
         
-        // ✅ FETCH MATERIALS - MATCHES DEMONSTRATED PROJECT
-        const materials = await materialAPI.getMaterials();
-        console.log('✅ MaterialTransferForm: Fetched', materials?.length || 0, 'materials');
-        setAllMaterials(materials || []);
-        
-        // ✅ EXTRACT CATEGORIES - backend returns formatted data
-        const uniqueCategories = [...new Set(materials.map(item => item.category).filter(Boolean))]
-          .sort((a, b) => a.localeCompare(b));
-        setCategories(uniqueCategories);
-        console.log('✅ MaterialTransferForm: Unique categories:', uniqueCategories.length);
+        // ✅ NOTE: Materials are now fetched from GRN based on selected From Site
+        // See useEffect with formData.fromSite dependency
         
       } catch (err) {
         console.error('❌ MaterialTransferForm: Error fetching data:', err);
@@ -200,30 +265,30 @@ export default function MaterialTransferForm() {
     fetchData();
   }, []);
 
-  // ✅ GET SUBCATEGORIES - MATCHES DEMONSTRATED PROJECT
+  // ✅ GET SUBCATEGORIES FROM GRN MATERIALS
   const getSubcategories = (category) => {
     return [...new Set(
-      allMaterials
+      grnMaterials
         .filter(item => item.category === category)
         .map(item => item.subCategory)
         .filter(Boolean)
     )].sort((a, b) => a.localeCompare(b));
   };
 
-  // ✅ GET SUB-SUBCATEGORIES - MATCHES DEMONSTRATED PROJECT
+  // ✅ GET SUB-SUBCATEGORIES FROM GRN MATERIALS
   const getSubSubcategories = (category, subCategory) => {
     return [...new Set(
-      allMaterials
+      grnMaterials
         .filter(item => item.category === category && item.subCategory === subCategory)
         .map(item => item.subCategory1)
         .filter(Boolean)
     )].sort((a, b) => a.localeCompare(b));
   };
 
-  // Get sub-sub-subcategories (SubCategory2) - NEW
+  // ✅ GET SUB-SUB-SUBCATEGORIES FROM GRN MATERIALS
   const getSubSubSubcategories = (category, subCategory, subCategory1) => {
     return [...new Set(
-      allMaterials
+      grnMaterials
         .filter(item => 
           item.category === category && 
           item.subCategory === subCategory && 

@@ -216,6 +216,7 @@ export default function UpcomingDeliveries({ isTabView = false }) {
     const getStatusBadge = (status) => {
         const statusColors = {
             'Pending': 'bg-gray-100 text-gray-700',
+            'Approved': 'bg-blue-100 text-blue-600',
             'Partial': 'bg-orange-100 text-orange-600',
             'Transferred': 'bg-green-100 text-green-600',
             'Cancelled': 'bg-red-100 text-red-600'
@@ -255,6 +256,8 @@ export default function UpcomingDeliveries({ isTabView = false }) {
         switch (status?.toLowerCase()) {
             case 'transferred':
                 return 'Transferred';
+            case 'approved':
+                return 'Approved';
             case 'partial':
                 return 'Partial';
             case 'pending':
@@ -315,6 +318,7 @@ export default function UpcomingDeliveries({ isTabView = false }) {
                             >
                                 <option value="" className="text-gray-500">All Status</option>
                                 <option value="pending" className="text-gray-900">Pending</option>
+                                <option value="approved" className="text-gray-900">Approved</option>
                                 <option value="partial" className="text-gray-900">Partial</option>
                                 <option value="transferred" className="text-gray-900">Transferred</option>
                                 <option value="cancelled" className="text-gray-900">Cancelled</option>
