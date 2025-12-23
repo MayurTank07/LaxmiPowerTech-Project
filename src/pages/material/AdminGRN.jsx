@@ -274,8 +274,11 @@ export default function AdminGRN() {
                           {delivery.status?.charAt(0).toUpperCase() + delivery.status?.slice(1)}
                         </span>
                       </td>
-                      <td className="border px-4 py-2 text-gray-600">
-                        {formatDate(delivery.date || delivery.createdAt)}
+                      <td className="border px-4 py-2">
+                        <div className="flex flex-col">
+                          <span className="text-gray-900 font-medium text-sm">{formatDate(delivery.updatedAt)}</span>
+                          <span className="text-xs text-gray-500">Challan Upload</span>
+                        </div>
                       </td>
                       <td className="border px-4 py-2">
                         <button
@@ -338,8 +341,12 @@ export default function AdminGRN() {
                   <p className="text-gray-900">{selectedDelivery.createdBy || 'N/A'}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Date</label>
-                  <p className="text-gray-900">{formatDate(selectedDelivery.date || selectedDelivery.createdAt)}</p>
+                  <label className="text-sm font-medium text-gray-600">Challan Upload Date</label>
+                  <p className="text-gray-900">{formatDate(selectedDelivery.updatedAt)}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Intent Created</label>
+                  <p className="text-gray-600 text-sm">{formatDate(selectedDelivery.createdAt)}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Status</label>

@@ -85,6 +85,19 @@ export default function DeliveryDetails() {
             // Import the API
             const { upcomingDeliveryAPI } = await import('../../utils/materialAPI');
             
+            // ✅ STEP 1: Upload delivery proof images (challan) FIRST
+            console.log('📤 Uploading delivery proof images:', deliveryImages.length);
+            const uploadResponse = await upcomingDeliveryAPI.uploadReceipts(item.id, deliveryImages);
+            
+            if (!uploadResponse.success) {
+                setValidationError('❌ Failed to upload delivery proof. Please try again.');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+            
+            console.log('✅ Delivery proof uploaded successfully');
+            
+            // ✅ STEP 2: Update material quantities
             // Format items for backend
             const formattedItems = materials.map(m => ({
                 itemId: m.itemId || m._id,
@@ -109,15 +122,20 @@ export default function DeliveryDetails() {
                     console.log('🎯 Status is Transferred, delivery moved to GRN');
                 }
                 
+                // Show success message
+                alert('✅ Delivery proof uploaded and materials updated successfully!');
+                
                 // Navigate back to Upcoming Deliveries list
                 navigate(-1);
             } else {
                 console.error('❌ Failed to update delivery:', response.message);
-                alert('Failed to update delivery: ' + response.message);
+                setValidationError('❌ Failed to update delivery: ' + response.message);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         } catch (error) {
             console.error('❌ Error updating delivery:', error);
-            alert('Error updating delivery. Please try again.');
+            setValidationError('❌ Error updating delivery. Please try again.');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
 

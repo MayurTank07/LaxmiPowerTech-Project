@@ -104,8 +104,11 @@ export default function GRN({ isTabView = false }) {
                     <h3 className="font-bold text-gray-900 text-base">
                       {delivery.transfer_number || delivery.st_id}
                     </h3>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {formatDate(delivery.date || delivery.createdAt)}
+                    <p className="text-xs text-gray-900 font-medium mt-1">
+                      {formatDate(delivery.updatedAt)}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Challan Upload Date
                     </p>
                     <p className="text-xs text-green-600 font-medium mt-0.5">
                       {delivery.type === 'PO' ? '📋 Vendor-wise PO' : '🚚 Site Transfer'}
