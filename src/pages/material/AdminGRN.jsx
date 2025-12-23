@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, Package, Receipt, Edit2, Save, XCircle, DollarSign, Download, FileText, FileSpreadsheet, Trash2, X, Calendar, MapPin, User } from 'lucide-react';
+import { Search, Eye, Package, Receipt, Edit2, Save, XCircle, DollarSign, Download, FileText, FileSpreadsheet, Trash2, X, Calendar, MapPin, User, TrendingUp } from 'lucide-react';
 import { upcomingDeliveryAPI, branchesAPI } from '../../utils/materialAPI';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
@@ -36,6 +36,16 @@ export default function AdminGRN() {
   const [sites, setSites] = useState([]);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [filteredDeliveries, setFilteredDeliveries] = useState([]);
+  const [showAnalytics, setShowAnalytics] = useState(true);
+  const [analytics, setAnalytics] = useState({
+    totalGRNs: 0,
+    totalInvoices: 0,
+    totalSpend: 0,
+    totalMaterials: 0,
+    invoiceSummary: [],
+    siteSummary: [],
+    materialSummary: []
+  });
 
   useEffect(() => {
     fetchGRNRecords();
@@ -47,9 +57,133 @@ export default function AdminGRN() {
     applyFilters();
   }, [deliveries, filterSite, filterDateFrom, filterDateTo, filterInvoiceNumber, filterCostMin, filterCostMax, search]);
 
+  // Calculate analytics whenever filtered deliveries change
+  useEffect(() => {
+    calculateAnalytics();
+  }, [filteredDeliveries]);
+
   // ❌ DISABLED: Auto-refresh removed per client request
   // No event listeners, no auto-polling, no auto-refresh
   // Data loads only on initial mount and manual filter changes
+
+  // Calculate analytics from filtered deliveries
+  const calculateAnalytics = () => {
+    if (!filteredDeliveries || filteredDeliveries.length === 0) {
+      setAnalytics({
+        totalGRNs: 0,
+        totalInvoices: 0,
+        totalSpend: 0,
+        totalMaterials: 0,
+        invoiceSummary: [],
+        siteSummary: [],
+        materialSummary: []
+      });
+      return;
+    }
+
+    // Calculate totals
+    const totalGRNs = filteredDeliveries.length;
+    const totalSpend = filteredDeliveries.reduce((sum, d) => 
+      sum + (d.billing?.finalAmount || 0), 0
+    );
+    
+    // Count unique invoices
+    const uniqueInvoices = new Set(
+      filteredDeliveries
+        .filter(d => d.billing?.invoiceNumber)
+        .map(d => d.billing.invoiceNumber)
+    );
+    const totalInvoices = uniqueInvoices.size;
+
+    // Count total materials
+    const totalMaterials = filteredDeliveries.reduce((sum, d) => 
+      sum + (d.items?.length || 0), 0
+    );
+
+    // Invoice-wise summary
+    const invoiceMap = {};
+    filteredDeliveries.forEach(delivery => {
+      const invoiceNo = delivery.billing?.invoiceNumber || 'No Invoice';
+      if (!invoiceMap[invoiceNo]) {
+        invoiceMap[invoiceNo] = {
+          invoiceNumber: invoiceNo,
+          totalAmount: 0,
+          grnCount: 0,
+          materialCount: 0,
+          grns: []
+        };
+      }
+      invoiceMap[invoiceNo].totalAmount += delivery.billing?.finalAmount || 0;
+      invoiceMap[invoiceNo].grnCount += 1;
+      invoiceMap[invoiceNo].materialCount += delivery.items?.length || 0;
+      invoiceMap[invoiceNo].grns.push(delivery.transfer_number || delivery.st_id);
+    });
+    const invoiceSummary = Object.values(invoiceMap).sort((a, b) => b.totalAmount - a.totalAmount);
+
+    // Site-wise summary
+    const siteMap = {};
+    filteredDeliveries.forEach(delivery => {
+      const site = delivery.to || 'Unknown';
+      if (!siteMap[site]) {
+        siteMap[site] = {
+          siteName: site,
+          totalAmount: 0,
+          grnCount: 0,
+          materialCount: 0,
+          invoices: new Set()
+        };
+      }
+      siteMap[site].totalAmount += delivery.billing?.finalAmount || 0;
+      siteMap[site].grnCount += 1;
+      siteMap[site].materialCount += delivery.items?.length || 0;
+      if (delivery.billing?.invoiceNumber) {
+        siteMap[site].invoices.add(delivery.billing.invoiceNumber);
+      }
+    });
+    const siteSummary = Object.values(siteMap).map(s => ({
+      ...s,
+      invoiceCount: s.invoices.size,
+      invoices: undefined
+    })).sort((a, b) => b.totalAmount - a.totalAmount);
+
+    // Material-wise summary
+    const materialMap = {};
+    filteredDeliveries.forEach(delivery => {
+      delivery.items?.forEach(item => {
+        const materialName = item.materialName || 'Unknown';
+        if (!materialMap[materialName]) {
+          materialMap[materialName] = {
+            materialName,
+            totalQuantity: 0,
+            totalCost: 0,
+            grnCount: 0,
+            unit: item.unit || 'units'
+          };
+        }
+        materialMap[materialName].totalQuantity += item.quantity || 0;
+        
+        // Find material billing if available
+        const materialBilling = delivery.billing?.materialBilling?.find(
+          mb => mb.materialName === materialName
+        );
+        if (materialBilling) {
+          materialMap[materialName].totalCost += materialBilling.totalAmount || 0;
+        }
+        materialMap[materialName].grnCount += 1;
+      });
+    });
+    const materialSummary = Object.values(materialMap).sort((a, b) => b.totalCost - a.totalCost);
+
+    setAnalytics({
+      totalGRNs,
+      totalInvoices,
+      totalSpend,
+      totalMaterials,
+      invoiceSummary,
+      siteSummary,
+      materialSummary
+    });
+  };
 
   // Apply all filters to deliveries
   const applyFilters = () => {
@@ -576,7 +710,141 @@ export default function AdminGRN() {
             <h1 className="text-2xl font-semibold text-gray-800">GRN (Goods Receipt Note)</h1>
             <p className="text-sm text-gray-500">View all completed deliveries</p>
           </div>
+          <button
+            onClick={() => setShowAnalytics(!showAnalytics)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm shadow-md"
+          >
+            <TrendingUp size={18} />
+            {showAnalytics ? 'Hide Analytics' : 'Show Analytics'}
+          </button>
         </div>
+
+        {/* Analytics Dashboard */}
+        {showAnalytics && !loading && (
+          <div className="mb-6 space-y-4">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Total GRNs Card */}
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-4 text-white shadow-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <Package size={24} className="opacity-80" />
+                  <span className="text-2xl font-bold">{analytics.totalGRNs}</span>
+                </div>
+                <p className="text-sm opacity-90">Total GRNs</p>
+                <p className="text-xs opacity-75 mt-1">Completed deliveries</p>
+              </div>
+
+              {/* Total Invoices Card */}
+              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-4 text-white shadow-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <Receipt size={24} className="opacity-80" />
+                  <span className="text-2xl font-bold">{analytics.totalInvoices}</span>
+                </div>
+                <p className="text-sm opacity-90">Total Invoices</p>
+                <p className="text-xs opacity-75 mt-1">Unique invoice numbers</p>
+              </div>
+
+              {/* Total Spend Card */}
+              <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-4 text-white shadow-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <DollarSign size={24} className="opacity-80" />
+                  <span className="text-2xl font-bold">₹{(analytics.totalSpend / 1000).toFixed(1)}K</span>
+                </div>
+                <p className="text-sm opacity-90">Total Spend</p>
+                <p className="text-xs opacity-75 mt-1">₹{analytics.totalSpend.toLocaleString('en-IN')}</p>
+              </div>
+
+              {/* Total Materials Card */}
+              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4 text-white shadow-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <Package size={24} className="opacity-80" />
+                  <span className="text-2xl font-bold">{analytics.totalMaterials}</span>
+                </div>
+                <p className="text-sm opacity-90">Total Materials</p>
+                <p className="text-xs opacity-75 mt-1">Material line items</p>
+              </div>
+            </div>
+
+            {/* Detailed Analytics Sections */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Invoice-wise Summary */}
+              <div className="bg-white rounded-lg shadow-md p-4 border border-gray-200">
+                <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <Receipt size={20} className="text-purple-600" />
+                  Invoice-wise Summary
+                </h3>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {analytics.invoiceSummary.slice(0, 10).map((invoice, idx) => (
+                    <div key={idx} className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="font-semibold text-sm text-gray-900">{invoice.invoiceNumber}</span>
+                        <span className="font-bold text-purple-600">₹{invoice.totalAmount.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="flex gap-4 text-xs text-gray-600">
+                        <span>{invoice.grnCount} GRNs</span>
+                        <span>{invoice.materialCount} Materials</span>
+                      </div>
+                    </div>
+                  ))}
+                  {analytics.invoiceSummary.length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-4">No invoices found</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Site-wise Summary */}
+              <div className="bg-white rounded-lg shadow-md p-4 border border-gray-200">
+                <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <MapPin size={20} className="text-orange-600" />
+                  Site-wise Summary
+                </h3>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {analytics.siteSummary.slice(0, 10).map((site, idx) => (
+                    <div key={idx} className="bg-orange-50 rounded-lg p-3 border border-orange-200">
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="font-semibold text-sm text-gray-900">{site.siteName}</span>
+                        <span className="font-bold text-orange-600">₹{site.totalAmount.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="flex gap-4 text-xs text-gray-600">
+                        <span>{site.grnCount} GRNs</span>
+                        <span>{site.materialCount} Materials</span>
+                        <span>{site.invoiceCount} Invoices</span>
+                      </div>
+                    </div>
+                  ))}
+                  {analytics.siteSummary.length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-4">No sites found</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Material-wise Summary */}
+              <div className="bg-white rounded-lg shadow-md p-4 border border-gray-200">
+                <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <Package size={20} className="text-green-600" />
+                  Material-wise Summary
+                </h3>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {analytics.materialSummary.slice(0, 10).map((material, idx) => (
+                    <div key={idx} className="bg-green-50 rounded-lg p-3 border border-green-200">
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="font-semibold text-sm text-gray-900">{material.materialName}</span>
+                        <span className="font-bold text-green-600">₹{material.totalCost.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="flex gap-4 text-xs text-gray-600">
+                        <span>{material.totalQuantity} {material.unit}</span>
+                        <span>{material.grnCount} GRNs</span>
+                      </div>
+                    </div>
+                  ))}
+                  {analytics.materialSummary.length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-4">No materials found</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="flex flex-col justify-center items-center py-20">
