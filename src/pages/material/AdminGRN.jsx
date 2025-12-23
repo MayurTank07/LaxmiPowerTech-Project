@@ -33,6 +33,7 @@ export default function AdminGRN() {
   const [filterInvoiceNumber, setFilterInvoiceNumber] = useState('');
   const [filterCostMin, setFilterCostMin] = useState('');
   const [filterCostMax, setFilterCostMax] = useState('');
+  const [filterType, setFilterType] = useState(''); // ✅ New: Type filter (Site Transfer / Intent)
   const [sites, setSites] = useState([]);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [filteredDeliveries, setFilteredDeliveries] = useState([]);
@@ -57,7 +58,7 @@ export default function AdminGRN() {
   // Apply all filters to deliveries
   useEffect(() => {
     applyFilters();
-  }, [deliveries, filterSite, filterDateFrom, filterDateTo, filterInvoiceNumber, filterCostMin, filterCostMax, search]);
+  }, [deliveries, filterSite, filterDateFrom, filterDateTo, filterInvoiceNumber, filterCostMin, filterCostMax, filterType, search]);
 
   // Calculate analytics whenever filtered deliveries change
   useEffect(() => {
@@ -149,9 +150,12 @@ export default function AdminGRN() {
       invoices: undefined
     })).sort((a, b) => b.totalAmount - a.totalAmount);
 
-    // ✅ Material-wise summary (with category hierarchy)
+    // ✅ Material-wise summary (with category hierarchy and proper cost calculation)
     const materialMap = {};
     filteredDeliveries.forEach(delivery => {
+      const totalItems = delivery.items?.length || 1;
+      const deliveryFinalAmount = delivery.billing?.finalAmount || 0;
+      
       delivery.items?.forEach(item => {
         // Build material name from category hierarchy
         const category = item.category || '';
@@ -179,19 +183,33 @@ export default function AdminGRN() {
             subCategory2,
             totalQuantity: 0,
             totalCost: 0,
+            totalPrice: 0,
+            totalDiscount: 0,
             grnCount: 0,
             unit: item.unit || 'units'
           };
         }
         materialMap[displayName].totalQuantity += item.quantity || 0;
         
-        // Find material billing if available
+        // ✅ Calculate cost from material billing or proportional split
         const materialBilling = delivery.billing?.materialBilling?.find(
-          mb => mb.materialName === displayName || mb.materialName === item.materialName
+          mb => mb.materialName === displayName || 
+                mb.materialName === item.materialName ||
+                mb.materialName === item.itemName ||
+                mb.materialName === item.name
         );
+        
         if (materialBilling) {
+          // Use actual material billing data
+          materialMap[displayName].totalPrice += materialBilling.price || 0;
+          materialMap[displayName].totalDiscount += materialBilling.discount || 0;
           materialMap[displayName].totalCost += materialBilling.totalAmount || 0;
+        } else if (deliveryFinalAmount > 0) {
+          // Proportional split if no itemized billing (divide equally among items)
+          const proportionalCost = deliveryFinalAmount / totalItems;
+          materialMap[displayName].totalCost += proportionalCost;
         }
+        
         materialMap[displayName].grnCount += 1;
       });
     });
@@ -229,6 +247,19 @@ export default function AdminGRN() {
       filtered = filtered.filter(delivery => 
         delivery.to === filterSite || delivery.from === filterSite
       );
+    }
+
+    // ✅ Type filter (Site Transfer / Intent)
+    if (filterType) {
+      filtered = filtered.filter(delivery => {
+        const deliveryType = delivery.type || '';
+        if (filterType === 'Site Transfer') {
+          return deliveryType.toLowerCase() === 'site transfer' || deliveryType.toLowerCase() === 'st';
+        } else if (filterType === 'Intent') {
+          return deliveryType.toLowerCase() === 'po' || deliveryType.toLowerCase() === 'intent';
+        }
+        return true;
+      });
     }
 
     // Invoice number filter
@@ -1013,6 +1044,20 @@ export default function AdminGRN() {
                     </select>
                   </div>
 
+                  {/* ✅ Type Filter */}
+                  <div className="flex-1 min-w-[180px]">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Type</label>
+                    <select
+                      value={filterType}
+                      onChange={(e) => setFilterType(e.target.value)}
+                      className="w-full border-2 border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white hover:border-gray-400 transition-colors cursor-pointer"
+                    >
+                      <option value="">All Types</option>
+                      <option value="Site Transfer">Site Transfer</option>
+                      <option value="Intent">Intent</option>
+                    </select>
+                  </div>
+
                   {/* Invoice Number Filter */}
                   <div className="flex-1 min-w-[180px]">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Invoice Number</label>
@@ -1086,6 +1131,7 @@ export default function AdminGRN() {
                   <button
                     onClick={() => {
                       setFilterSite('');
+                      setFilterType('');
                       setFilterStatus('');
                       setFilterDateFrom('');
                       setFilterDateTo('');
