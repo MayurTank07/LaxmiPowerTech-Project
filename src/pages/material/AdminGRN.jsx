@@ -30,17 +30,89 @@ export default function AdminGRN() {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
+  const [filterInvoiceNumber, setFilterInvoiceNumber] = useState('');
+  const [filterCostMin, setFilterCostMin] = useState('');
+  const [filterCostMax, setFilterCostMax] = useState('');
   const [sites, setSites] = useState([]);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [filteredDeliveries, setFilteredDeliveries] = useState([]);
 
   useEffect(() => {
     fetchGRNRecords();
     fetchSites();
   }, [currentPage, search, filterSite, filterDateFrom, filterDateTo]);
 
+  // Apply all filters to deliveries
+  useEffect(() => {
+    applyFilters();
+  }, [deliveries, filterSite, filterDateFrom, filterDateTo, filterInvoiceNumber, filterCostMin, filterCostMax, search]);
+
   // ❌ DISABLED: Auto-refresh removed per client request
   // No event listeners, no auto-polling, no auto-refresh
   // Data loads only on initial mount and manual filter changes
+
+  // Apply all filters to deliveries
+  const applyFilters = () => {
+    let filtered = [...deliveries];
+
+    // Search filter (ID, site, etc.)
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filtered = filtered.filter(delivery => 
+        (delivery.transfer_number?.toLowerCase().includes(searchLower)) ||
+        (delivery.st_id?.toLowerCase().includes(searchLower)) ||
+        (delivery.from?.toLowerCase().includes(searchLower)) ||
+        (delivery.to?.toLowerCase().includes(searchLower)) ||
+        (delivery.billing?.invoiceNumber?.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Site filter
+    if (filterSite) {
+      filtered = filtered.filter(delivery => 
+        delivery.to === filterSite || delivery.from === filterSite
+      );
+    }
+
+    // Invoice number filter
+    if (filterInvoiceNumber) {
+      const invoiceSearchLower = filterInvoiceNumber.toLowerCase();
+      filtered = filtered.filter(delivery => 
+        delivery.billing?.invoiceNumber?.toLowerCase().includes(invoiceSearchLower)
+      );
+    }
+
+    // Cost range filter
+    if (filterCostMin || filterCostMax) {
+      filtered = filtered.filter(delivery => {
+        const finalAmount = delivery.billing?.finalAmount || 0;
+        const min = filterCostMin ? parseFloat(filterCostMin) : 0;
+        const max = filterCostMax ? parseFloat(filterCostMax) : Infinity;
+        return finalAmount >= min && finalAmount <= max;
+      });
+    }
+
+    // Date range filter
+    if (filterDateFrom) {
+      const fromDate = new Date(filterDateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      filtered = filtered.filter(delivery => {
+        const deliveryDate = new Date(delivery.createdAt);
+        return deliveryDate >= fromDate;
+      });
+    }
+
+    if (filterDateTo) {
+      const toDate = new Date(filterDateTo);
+      toDate.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(delivery => {
+        const deliveryDate = new Date(delivery.createdAt);
+        return deliveryDate <= toDate;
+      });
+    }
+
+    setFilteredDeliveries(filtered);
+  };
 
   const fetchSites = async () => {
     try {
@@ -345,8 +417,11 @@ export default function AdminGRN() {
   // Export to Excel
   const handleExportExcel = () => {
     try {
+      // Use filtered deliveries for export
+      const dataToExport = filteredDeliveries.length > 0 ? filteredDeliveries : deliveries;
+      
       // Prepare data for export
-      const exportData = deliveries.map((delivery, index) => ({
+      const exportData = dataToExport.map((delivery, index) => ({
         'Sr. No.': index + 1,
         'Type': delivery.type === 'PO' ? 'Purchase Order' : 'Site Transfer',
         'Transfer ID': delivery.transfer_number || delivery.st_id || 'N/A',
@@ -412,6 +487,9 @@ export default function AdminGRN() {
   // Export to PDF
   const handleExportPDF = () => {
     try {
+      // Use filtered deliveries for export
+      const dataToExport = filteredDeliveries.length > 0 ? filteredDeliveries : deliveries;
+      
       const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation
       
       // Add title
@@ -419,13 +497,14 @@ export default function AdminGRN() {
       doc.setFont('helvetica', 'bold');
       doc.text('GRN Records', 14, 15);
       
-      // Add export date
+      // Add export date and record count
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.text(`Export Date: ${new Date().toLocaleDateString('en-IN')}`, 14, 22);
+      doc.text(`Total Records: ${dataToExport.length}`, 14, 28);
       
       // Prepare table data
-      const tableData = deliveries.map((delivery, index) => [
+      const tableData = dataToExport.map((delivery, index) => [
         index + 1,
         delivery.type === 'PO' ? 'PO' : 'ST',
         delivery.transfer_number || delivery.st_id || 'N/A',
@@ -444,7 +523,7 @@ export default function AdminGRN() {
 
       // Add table using autoTable
       autoTable(doc, {
-        startY: 28,
+        startY: 34,
         head: [['Sr.', 'Type', 'Transfer ID', 'From', 'To', 'Invoice No.', 'Total Price', 'Bill Date', 'Final Amount', 'Status']],
         body: tableData,
         theme: 'grid',
@@ -509,7 +588,7 @@ export default function AdminGRN() {
             <div className="mb-4">
               <div className="flex justify-between items-center mb-3">
                 <h2 className="text-lg font-semibold text-gray-700">
-                  GRN Records ({deliveries.length} records)
+                  GRN Records ({filteredDeliveries.length} of {deliveries.length} records)
                 </h2>
                 <div className="flex gap-3 items-center">
                   <input
@@ -552,12 +631,18 @@ export default function AdminGRN() {
                 </div>
               </div>
 
-              {/* Filters Section - Matching Intent PO */}
+              {/* Filters Section - Advanced Filters */}
               <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg p-4 mb-4 shadow-sm">
-                <div className="flex gap-4 items-end flex-wrap">
+                <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <Search size={16} className="text-orange-600" />
+                  Advanced Filters
+                </h3>
+                
+                {/* First Row */}
+                <div className="flex gap-4 items-end flex-wrap mb-3">
                   {/* Site Filter */}
-                  <div className="flex-1 min-w-[200px]">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Filter by Site</label>
+                  <div className="flex-1 min-w-[180px]">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Site</label>
                     <select
                       value={filterSite}
                       onChange={(e) => setFilterSite(e.target.value)}
@@ -568,6 +653,18 @@ export default function AdminGRN() {
                         <option key={site} value={site}>{site}</option>
                       ))}
                     </select>
+                  </div>
+
+                  {/* Invoice Number Filter */}
+                  <div className="flex-1 min-w-[180px]">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Invoice Number</label>
+                    <input
+                      type="text"
+                      value={filterInvoiceNumber}
+                      onChange={(e) => setFilterInvoiceNumber(e.target.value)}
+                      placeholder="Search invoice..."
+                      className="w-full border-2 border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white hover:border-gray-400 transition-colors"
+                    />
                   </div>
 
                   {/* Date From */}
@@ -591,6 +688,41 @@ export default function AdminGRN() {
                       className="w-full border-2 border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white hover:border-gray-400 transition-colors"
                     />
                   </div>
+                </div>
+
+                {/* Second Row - Cost Range */}
+                <div className="flex gap-4 items-end flex-wrap">
+                  {/* Cost Min */}
+                  <div className="flex-1 min-w-[180px]">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Min Cost (₹)</label>
+                    <input
+                      type="number"
+                      value={filterCostMin}
+                      onChange={(e) => setFilterCostMin(e.target.value)}
+                      placeholder="Min amount"
+                      min="0"
+                      step="100"
+                      className="w-full border-2 border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white hover:border-gray-400 transition-colors"
+                    />
+                  </div>
+
+                  {/* Cost Max */}
+                  <div className="flex-1 min-w-[180px]">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Max Cost (₹)</label>
+                    <input
+                      type="number"
+                      value={filterCostMax}
+                      onChange={(e) => setFilterCostMax(e.target.value)}
+                      placeholder="Max amount"
+                      min="0"
+                      step="100"
+                      className="w-full border-2 border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white hover:border-gray-400 transition-colors"
+                    />
+                  </div>
+
+                  {/* Spacer */}
+                  <div className="flex-1 min-w-[160px]"></div>
+                  <div className="flex-1 min-w-[160px]"></div>
 
                   {/* Clear Filters Button */}
                   <button
@@ -599,10 +731,13 @@ export default function AdminGRN() {
                       setFilterStatus('');
                       setFilterDateFrom('');
                       setFilterDateTo('');
+                      setFilterInvoiceNumber('');
+                      setFilterCostMin('');
+                      setFilterCostMax('');
                     }}
                     className="px-6 py-2.5 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium text-sm shadow-sm hover:shadow-md"
                   >
-                    Clear Filters
+                    Clear All Filters
                   </button>
                 </div>
               </div>
@@ -633,7 +768,7 @@ export default function AdminGRN() {
                   </tr>
                 </thead>
                 <tbody>
-                  {deliveries.map((delivery) => (
+                  {filteredDeliveries.map((delivery) => (
                     <tr key={delivery._id} className="hover:bg-gray-50">
                       <td className="border px-4 py-2 font-medium text-gray-900">
                         <div className="flex flex-col">
