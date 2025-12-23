@@ -14,6 +14,14 @@ export default function Intent({ isTabView = false }) {
   const [totalPages, setTotalPages] = useState(1);
   const [showPopup, setShowPopup] = useState(false);
   
+  // Get user and assigned branches
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const userAssignedBranches = user?.assignedBranches || [];
+  
+  // Debug: Log user's assigned branches
+  console.log('👤 Intent - User:', user?.name);
+  console.log('🏢 Intent - Assigned Branches:', userAssignedBranches);
+  
   // ✅ Filter states
   const [showFilters, setShowFilters] = useState(false);
   const [filterSite, setFilterSite] = useState('');
@@ -36,11 +44,34 @@ export default function Intent({ isTabView = false }) {
   const fetchSites = async () => {
     try {
       const branches = await branchesAPI.getAll();
-      const sitesList = branches.map(branch => branch.name).sort();
+      
+      // ✅ CRITICAL: Filter sites based on user's assigned branches
+      let filteredBranches = branches;
+      if (userAssignedBranches && userAssignedBranches.length > 0) {
+        const assignedBranchIds = userAssignedBranches.map(b => b._id || b);
+        console.log('🔍 Intent - Assigned Branch IDs:', assignedBranchIds);
+        
+        filteredBranches = branches.filter(branch => 
+          assignedBranchIds.includes(branch._id)
+        );
+        console.log('✅ Intent - Filtered to assigned sites:', filteredBranches.length, 'of', branches.length);
+      } else {
+        console.log('⚠️ Intent - No assigned branches, showing all sites');
+      }
+      
+      const sitesList = filteredBranches.map(branch => branch.name).sort();
       setSites(sitesList);
+      console.log('✅ Intent - Site filter options:', sitesList);
     } catch (err) {
       console.error('Error fetching sites:', err);
-      setSites([]);
+      // If user has assigned branches, use only those
+      if (userAssignedBranches && userAssignedBranches.length > 0) {
+        const assignedSites = userAssignedBranches.map(b => b.name).filter(Boolean).sort();
+        setSites(assignedSites);
+        console.log('⚠️ Intent - Using assigned sites from user object:', assignedSites);
+      } else {
+        setSites([]);
+      }
     }
   };
 
@@ -124,6 +155,23 @@ export default function Intent({ isTabView = false }) {
       // ✅ CRITICAL: Filter out approved intents (they should only appear in Upcoming Deliveries)
       combinedData = combinedData.filter(item => item.status !== 'approved');
       
+      // ✅ CRITICAL: Filter by user's assigned branches
+      if (userAssignedBranches && userAssignedBranches.length > 0) {
+        const assignedSiteNames = userAssignedBranches.map(b => b.name).filter(Boolean);
+        console.log('🔒 Intent - Filtering by assigned sites:', assignedSiteNames);
+        
+        combinedData = combinedData.filter(item => {
+          const deliverySite = item.deliverySite;
+          // Show intent if delivery site matches user's assigned sites
+          const isAllowed = assignedSiteNames.includes(deliverySite);
+          return isAllowed;
+        });
+        
+        console.log('✅ Intent - Filtered to', combinedData.length, 'intents for user\'s sites');
+      } else {
+        console.log('⚠️ Intent - No site restriction applied (admin or no assigned branches)');
+      }
+      
       // ✅ Apply filters client-side
       if (filterSite) {
         combinedData = combinedData.filter(item => 
@@ -206,8 +254,6 @@ export default function Intent({ isTabView = false }) {
         return status;
     }
   };
-
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   // Render content only (for tab view)
   const renderContent = () => (

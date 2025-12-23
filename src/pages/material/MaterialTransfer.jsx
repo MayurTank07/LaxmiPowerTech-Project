@@ -20,6 +20,11 @@ export default function MaterialTransfer({ isTabView = false }) {
   const [sites, setSites] = useState([]);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const userAssignedBranches = user?.assignedBranches || [];
+  
+  // Debug: Log user's assigned branches
+  console.log('👤 Material Transfer - User:', user?.name);
+  console.log('🏢 Material Transfer - Assigned Branches:', userAssignedBranches);
 
   // Fetch site transfers from backend
   useEffect(() => {
@@ -35,11 +40,34 @@ export default function MaterialTransfer({ isTabView = false }) {
   const fetchSites = async () => {
     try {
       const branches = await branchesAPI.getAll();
-      const sitesList = branches.map(branch => branch.name).sort();
+      
+      // ✅ CRITICAL: Filter sites based on user's assigned branches
+      let filteredBranches = branches;
+      if (userAssignedBranches && userAssignedBranches.length > 0) {
+        const assignedBranchIds = userAssignedBranches.map(b => b._id || b);
+        console.log('🔍 Material Transfer - Assigned Branch IDs:', assignedBranchIds);
+        
+        filteredBranches = branches.filter(branch => 
+          assignedBranchIds.includes(branch._id)
+        );
+        console.log('✅ Material Transfer - Filtered to assigned sites:', filteredBranches.length, 'of', branches.length);
+      } else {
+        console.log('⚠️ Material Transfer - No assigned branches, showing all sites');
+      }
+      
+      const sitesList = filteredBranches.map(branch => branch.name).sort();
       setSites(sitesList);
+      console.log('✅ Material Transfer - Site filter options:', sitesList);
     } catch (err) {
       console.error('Error fetching sites:', err);
-      setSites([]);
+      // If user has assigned branches, use only those
+      if (userAssignedBranches && userAssignedBranches.length > 0) {
+        const assignedSites = userAssignedBranches.map(b => b.name).filter(Boolean).sort();
+        setSites(assignedSites);
+        console.log('⚠️ Material Transfer - Using assigned sites from user object:', assignedSites);
+      } else {
+        setSites([]);
+      }
     }
   };
 
@@ -108,6 +136,24 @@ export default function MaterialTransfer({ isTabView = false }) {
         transfersData = transfersData.filter(transfer => 
           transfer.status?.toLowerCase() !== 'transferred'
         );
+        
+        // ✅ CRITICAL: Filter by user's assigned branches
+        if (userAssignedBranches && userAssignedBranches.length > 0) {
+          const assignedSiteNames = userAssignedBranches.map(b => b.name).filter(Boolean);
+          console.log('🔒 Material Transfer - Filtering by assigned sites:', assignedSiteNames);
+          
+          transfersData = transfersData.filter(transfer => {
+            const fromSite = transfer.fromSite;
+            const toSite = transfer.toSite;
+            // Show transfer if either 'from' or 'to' matches user's assigned sites
+            const isAllowed = assignedSiteNames.includes(fromSite) || assignedSiteNames.includes(toSite);
+            return isAllowed;
+          });
+          
+          console.log('✅ Material Transfer - Filtered to', transfersData.length, 'transfers for user\'s sites');
+        } else {
+          console.log('⚠️ Material Transfer - No site restriction applied (admin or no assigned branches)');
+        }
         
         // ✅ Apply filters client-side
         if (filterSite) {
