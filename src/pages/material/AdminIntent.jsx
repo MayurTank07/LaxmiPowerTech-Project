@@ -830,7 +830,7 @@ export default function AdminIntent() {
                           <span className="text-gray-400 text-xs">No image</span>
                         )}
                       </td>
-                      <td className="border px-4 py-2">{indent.requestedBy || 'N/A'}</td>
+                      <td className="border px-4 py-2">{indent.requestedBy?.name || indent.requestedBy || 'N/A'}</td>
                       <td className="border px-4 py-2">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(indent.status)}`}>
                           {indent.status?.charAt(0).toUpperCase() + indent.status?.slice(1)}
@@ -973,7 +973,7 @@ export default function AdminIntent() {
                     <p className="text-sm text-gray-500">Requested By</p>
                     {/* ❌ ALWAYS READ-ONLY - Cannot be edited in any mode */}
                     <div className="mt-1 px-3 py-2 bg-gray-100 border border-gray-200 rounded text-gray-700 font-medium">
-                      {selectedIndent.requestedBy || 'N/A'}
+                      {selectedIndent.requestedBy?.name || selectedIndent.requestedBy || 'N/A'}
                     </div>
                   </div>
                   <div>
