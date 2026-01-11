@@ -861,35 +861,7 @@ export default function AdminGRN() {
             </div>
 
             {/* Detailed Analytics Sections */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {/* Invoice-wise Summary */}
-              <div className="bg-white rounded-lg shadow-md p-4 border border-gray-200">
-                <h3 className="text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
-                  <Receipt size={20} className="text-purple-600" />
-                  Invoice-wise Summary
-                </h3>
-                <p className="text-xs text-gray-600 mb-3 bg-purple-50 p-2 rounded border border-purple-200">
-                  💡 <strong>Note:</strong> Multiple GRNs can belong to one invoice. This shows total amount, GRN count, and materials for each invoice number.
-                </p>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {analytics.invoiceSummary.slice(0, 10).map((invoice, idx) => (
-                    <div key={idx} className="bg-purple-50 rounded-lg p-3 border border-purple-200">
-                      <div className="flex justify-between items-start mb-1">
-                        <span className="font-semibold text-sm text-gray-900">{invoice.invoiceNumber}</span>
-                        <span className="font-bold text-purple-600">₹{invoice.totalAmount.toLocaleString('en-IN')}</span>
-                      </div>
-                      <div className="flex gap-4 text-xs text-gray-600">
-                        <span>{invoice.grnCount} GRNs</span>
-                        <span>{invoice.materialCount} Materials</span>
-                      </div>
-                    </div>
-                  ))}
-                  {analytics.invoiceSummary.length === 0 && (
-                    <p className="text-sm text-gray-500 text-center py-4">No invoices found</p>
-                  )}
-                </div>
-              </div>
-
+            <div className="max-w-2xl mx-auto">
               {/* Site-wise Summary */}
               <div className="bg-white rounded-lg shadow-md p-4 border border-gray-200">
                 <h3 className="text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
@@ -915,51 +887,6 @@ export default function AdminGRN() {
                   ))}
                   {analytics.siteSummary.length === 0 && (
                     <p className="text-sm text-gray-500 text-center py-4">No sites found</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Material-wise Summary */}
-              <div className="bg-white rounded-lg shadow-md p-4 border border-gray-200">
-                <h3 className="text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
-                  <Package size={20} className="text-green-600" />
-                  Material-wise Summary
-                </h3>
-                <p className="text-xs text-gray-600 mb-3 bg-green-50 p-2 rounded border border-green-200">
-                  💡 <strong>Note:</strong> Shows total quantity delivered, total cost spent, and GRN count for each material type across all sites.
-                </p>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {analytics.materialSummary.slice(0, 10).map((material, idx) => (
-                    <div key={idx} className="bg-green-50 rounded-lg p-3 border border-green-200">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex-1">
-                          <span className="font-semibold text-sm text-gray-900 block mb-1">{material.materialName}</span>
-                          {/* Show category hierarchy if available */}
-                          {material.category && (
-                            <div className="flex flex-wrap gap-1 text-xs">
-                              <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">{material.category}</span>
-                              {material.subCategory && (
-                                <span className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">{material.subCategory}</span>
-                              )}
-                              {material.subCategory1 && (
-                                <span className="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">{material.subCategory1}</span>
-                              )}
-                              {material.subCategory2 && (
-                                <span className="bg-pink-100 text-pink-700 px-1.5 py-0.5 rounded">{material.subCategory2}</span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        <span className="font-bold text-green-600 ml-2">₹{material.totalCost.toLocaleString('en-IN')}</span>
-                      </div>
-                      <div className="flex gap-4 text-xs text-gray-600">
-                        <span>{material.totalQuantity} {material.unit}</span>
-                        <span>{material.grnCount} GRNs</span>
-                      </div>
-                    </div>
-                  ))}
-                  {analytics.materialSummary.length === 0 && (
-                    <p className="text-sm text-gray-500 text-center py-4">No materials found</p>
                   )}
                 </div>
               </div>
