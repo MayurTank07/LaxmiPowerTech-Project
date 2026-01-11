@@ -411,49 +411,50 @@ export default function AdminGRN() {
     
     console.log('🔍 Loading GRN Details for:', delivery.st_id);
     console.log('📦 Delivery items:', delivery.items?.length);
-    console.log('💰 Existing billing data:', delivery.billing);
+    console.log('💰 Backend billing exists?', !!delivery.billing);
+    if (delivery.billing?.materialBilling) {
+      console.log('   Material billing records:', delivery.billing.materialBilling.length);
+    }
     
     // Auto-generate invoice number from base PO ID
     const autoInvoiceNumber = extractBasePOId(delivery.transfer_number || delivery.st_id);
     
     // Initialize material-wise billing from delivery items
     const materialBilling = delivery.items?.map((item, index) => {
-      console.log(`\n🔎 Processing item ${index}:`, {
-        itemId: item._id,
-        itemCategory: item.category,
-        quantity: item.received_quantity || item.st_quantity
-      });
+      const quantity = item.received_quantity || item.st_quantity || 0;
       
-      // Check if billing data exists for this material
-      const existingBilling = delivery.billing?.materialBilling?.find(
-        mb => mb.materialId === item._id || mb.materialName === item.category
-      );
+      // Try multiple matching strategies to find existing billing data
+      let existingBilling = null;
       
-      console.log('   Existing billing found?', existingBilling ? 'YES' : 'NO');
-      if (existingBilling) {
-        console.log('   Existing billing data:', existingBilling);
-      } else {
-        console.log('   Available billing items:', delivery.billing?.materialBilling?.map(mb => ({
-          id: mb.materialId,
-          name: mb.materialName
-        })));
+      if (delivery.billing?.materialBilling && Array.isArray(delivery.billing.materialBilling)) {
+        // Strategy 1: Match by index (most reliable for same order)
+        if (delivery.billing.materialBilling[index]) {
+          existingBilling = delivery.billing.materialBilling[index];
+        }
+        
+        // Strategy 2: Match by materialId (string comparison)
+        if (!existingBilling) {
+          existingBilling = delivery.billing.materialBilling.find(
+            mb => String(mb.materialId) === String(item._id) || String(mb.materialId) === String(item.itemId)
+          );
+        }
+        
+        // Strategy 3: Match by materialName (case-insensitive)
+        if (!existingBilling && item.category) {
+          existingBilling = delivery.billing.materialBilling.find(
+            mb => mb.materialName?.toLowerCase().trim() === item.category?.toLowerCase().trim()
+          );
+        }
       }
       
-      const quantity = item.received_quantity || item.st_quantity || 0;
+      // Use existing billing data or calculate fresh values
       const pricePerUnit = existingBilling?.pricePerUnit || 0;
-      const totalPrice = quantity * pricePerUnit;
-      const discountAmount = totalPrice * 0.05;  // Fixed 5% discount
-      const finalCost = totalPrice - discountAmount;
-      
-      console.log('   Final calculated values:', {
-        pricePerUnit,
-        totalPrice,
-        discountAmount,
-        finalCost
-      });
+      const totalPrice = existingBilling?.totalPrice || (quantity * pricePerUnit);
+      const discountAmount = existingBilling?.discountAmount || (totalPrice * 0.05);
+      const finalCost = existingBilling?.finalCost || (totalPrice - discountAmount);
       
       return {
-        materialId: item._id || `material-${index}`,
+        materialId: item._id || item.itemId || `material-${index}`,
         materialName: item.category || 'Unknown Material',
         quantity: quantity,
         pricePerUnit: pricePerUnit,
@@ -612,30 +613,17 @@ export default function AdminGRN() {
       console.log('✅ Saved invoice number:', response.data?.billing?.invoiceNumber);
       
       if (response.success) {
-        // Update local state
-        setSelectedDelivery(response.data);
-        
-        // Update billing data with saved values from response
-        setBillingData({
-          invoiceNumber: response.data.billing?.invoiceNumber || '',
-          billDate: response.data.billing?.billDate || '',
-          materialBilling: response.data.billing?.materialBilling || [],
-          totalPrice: response.data.billing?.totalPrice || 0,
-          totalDiscount: response.data.billing?.totalDiscount || 0,
-          finalAmount: response.data.billing?.finalAmount || 0,
-          companyName: response.data.billing?.companyName || 'Laxmi Powertech Private Limited'
-        });
-        
-        // Update deliveries list
-        setDeliveries(prev => prev.map(d => 
-          d._id === response.data._id ? response.data : d
-        ));
+        console.log('✅ Billing saved successfully');
+        console.log('   Saved data:', response.data.billing);
         
         // Refetch GRN records to ensure table has latest data
-        fetchGRNRecords();
+        await fetchGRNRecords();
+        
+        // Reload the details modal with fresh data from backend
+        handleViewDetails(response.data);
         
         setIsEditMode(false);
-        alert('Bill saved successfully! Invoice number and date-time have been assigned.');
+        alert('Bill saved successfully! All billing details have been updated.');
       }
     } catch (err) {
       console.error('Error updating billing:', err);
