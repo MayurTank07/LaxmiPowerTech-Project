@@ -178,7 +178,7 @@ export default function AdminIntent() {
       }
       
       // Determine if this is a PurchaseOrder or Indent based on type field
-      const isPurchaseOrder = indent.type === 'purchaseOrder' || indent.purchaseOrderId;
+      const isPurchaseOrder = indent.type === 'purchaseOrder';
       
       // Fetch fresh data from backend
       const response = isPurchaseOrder 
@@ -274,7 +274,7 @@ export default function AdminIntent() {
 
     try {
       setDeletingAttachment(attachmentIndex);
-      const isPurchaseOrder = selectedIndent.type === 'purchaseOrder' || selectedIndent.purchaseOrderId;
+      const isPurchaseOrder = selectedIndent.type === 'purchaseOrder';
       
       const response = isPurchaseOrder
         ? await purchaseOrderAPI.deleteAttachment(selectedIndent._id, attachmentIndex)
