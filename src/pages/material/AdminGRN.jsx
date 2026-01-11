@@ -409,61 +409,23 @@ export default function AdminGRN() {
     setShowDetailsModal(true);
     setIsEditMode(false);
     
-    console.log('🔍 Loading GRN Details for:', delivery.st_id);
-    console.log('📦 Delivery items:', delivery.items?.length);
-    console.log('💰 Backend billing exists?', !!delivery.billing);
-    if (delivery.billing?.materialBilling) {
-      console.log('   Material billing records:', delivery.billing.materialBilling.length);
-    }
-    
     // Auto-generate invoice number from base PO ID
     const autoInvoiceNumber = extractBasePOId(delivery.transfer_number || delivery.st_id);
     
     // Initialize material-wise billing from delivery items
     const materialBilling = delivery.items?.map((item, index) => {
-      const quantity = item.received_quantity || item.st_quantity || 0;
-      
-      // Try multiple matching strategies to find existing billing data
-      let existingBilling = null;
-      
-      if (delivery.billing?.materialBilling && Array.isArray(delivery.billing.materialBilling)) {
-        // Strategy 1: Match by index (most reliable for same order)
-        if (delivery.billing.materialBilling[index]) {
-          existingBilling = delivery.billing.materialBilling[index];
-        }
-        
-        // Strategy 2: Match by materialId (string comparison)
-        if (!existingBilling) {
-          existingBilling = delivery.billing.materialBilling.find(
-            mb => String(mb.materialId) === String(item._id) || String(mb.materialId) === String(item.itemId)
-          );
-        }
-        
-        // Strategy 3: Match by materialName (case-insensitive)
-        if (!existingBilling && item.category) {
-          existingBilling = delivery.billing.materialBilling.find(
-            mb => mb.materialName?.toLowerCase().trim() === item.category?.toLowerCase().trim()
-          );
-        }
-      }
-      
-      // Use existing billing data - handle both old and new field names
-      // Old data might use 'price', new data uses 'pricePerUnit'
-      const pricePerUnit = existingBilling?.pricePerUnit || existingBilling?.price || 0;
-      const totalPrice = existingBilling?.totalPrice || existingBilling?.amount || (quantity * pricePerUnit);
-      const discountAmount = existingBilling?.discountAmount || existingBilling?.discount || (totalPrice * 0.05);
-      const finalCost = existingBilling?.finalCost || existingBilling?.totalAmount || (totalPrice - discountAmount);
-      
-      console.log('   Loaded values:', { pricePerUnit, totalPrice, discountAmount, finalCost });
+      // Check if billing data exists for this material
+      const existingBilling = delivery.billing?.materialBilling?.find(
+        mb => mb.materialId === item._id || mb.materialName === item.category
+      );
       
       return {
-        materialId: item._id || item.itemId || `material-${index}`,
+        materialId: item._id || `material-${index}`,
         materialName: item.category || 'Unknown Material',
-        quantity: quantity,
-        pricePerUnit: pricePerUnit,
-        totalPrice: totalPrice,
-        discountAmount: discountAmount,
-        finalCost: finalCost
+        price: existingBilling?.price || 0,
+        discount: existingBilling?.discount || 0,
+        discountType: existingBilling?.discountType || 'flat',
+        totalAmount: existingBilling?.totalAmount || 0
       };
     }) || [];
     
@@ -489,62 +451,57 @@ export default function AdminGRN() {
     handleViewDetails(selectedDelivery);
   };
 
-  // Calculate totals from material billing with fixed 5% discount
+  // Calculate totals from material billing
   const calculateTotals = (materialBilling) => {
-    let totalPriceSum = 0;
-    let totalDiscountSum = 0;
+    let totalPrice = 0;
+    let totalDiscountAmount = 0;
     
     materialBilling.forEach(material => {
-      const quantity = parseFloat(material.quantity) || 0;
-      const pricePerUnit = parseFloat(material.pricePerUnit) || 0;
-      const totalPrice = quantity * pricePerUnit;
-      const discountAmount = totalPrice * 0.05;  // Fixed 5% discount
+      const price = parseFloat(material.price) || 0;
+      const discount = parseFloat(material.discount) || 0;
+      const discountType = material.discountType || 'flat';
       
-      totalPriceSum += totalPrice;
-      totalDiscountSum += discountAmount;
+      totalPrice += price;
+      
+      if (discountType === 'percentage') {
+        totalDiscountAmount += (price * discount / 100);
+      } else {
+        totalDiscountAmount += discount;
+      }
     });
     
     return {
-      totalPrice: totalPriceSum,
-      totalDiscount: totalDiscountSum,
-      finalAmount: totalPriceSum - totalDiscountSum
+      totalPrice,
+      totalDiscount: totalDiscountAmount,
+      finalAmount: totalPrice - totalDiscountAmount
     };
   };
 
   const handleMaterialBillingChange = (materialId, field, value) => {
-    console.log('📝 Billing change:', { materialId, field, value });
-    
     const updatedMaterialBilling = billingData.materialBilling.map(material => {
       if (material.materialId === materialId) {
         // Parse numeric values immediately
         let updatedValue = value;
-        if (field === 'pricePerUnit') {
+        if (field === 'price' || field === 'discount') {
           updatedValue = parseFloat(value) || 0;
         }
         
         const updatedMaterial = { ...material, [field]: updatedValue };
         
-        // Recalculate with fixed 5% discount
-        const quantity = parseFloat(updatedMaterial.quantity) || 0;
-        const pricePerUnit = parseFloat(updatedMaterial.pricePerUnit) || 0;
-        const totalPrice = quantity * pricePerUnit;
-        const discountAmount = totalPrice * 0.05;  // Fixed 5% discount
-        const finalCost = totalPrice - discountAmount;
+        // Recalculate total amount for this material
+        const price = parseFloat(updatedMaterial.price) || 0;
+        const discount = parseFloat(updatedMaterial.discount) || 0;
+        const discountType = updatedMaterial.discountType;
         
-        updatedMaterial.quantity = quantity;
-        updatedMaterial.pricePerUnit = pricePerUnit;
-        updatedMaterial.totalPrice = totalPrice;
-        updatedMaterial.discountAmount = discountAmount;
-        updatedMaterial.finalCost = finalCost;
+        if (discountType === 'percentage') {
+          updatedMaterial.totalAmount = Math.max(0, price - (price * discount / 100));
+        } else {
+          updatedMaterial.totalAmount = Math.max(0, price - discount);
+        }
         
-        console.log('   Updated material:', {
-          materialName: updatedMaterial.materialName,
-          quantity,
-          pricePerUnit,
-          totalPrice,
-          discountAmount,
-          finalCost
-        });
+        // Ensure all numeric fields are numbers
+        updatedMaterial.price = price;
+        updatedMaterial.discount = discount;
         
         return updatedMaterial;
       }
@@ -553,8 +510,6 @@ export default function AdminGRN() {
     
     // Recalculate totals
     const totals = calculateTotals(updatedMaterialBilling);
-    
-    console.log('   New totals:', totals);
     
     setBillingData({
       ...billingData,
@@ -567,24 +522,23 @@ export default function AdminGRN() {
     try {
       setIsSaving(true);
       
-      // Validate billing data - ensure all materials have valid data
+      // Validate billing data - ensure all materials have prices
       const hasInvalidData = billingData.materialBilling.some(material => {
-        const quantity = parseFloat(material.quantity);
-        const pricePerUnit = parseFloat(material.pricePerUnit);
-        return isNaN(quantity) || isNaN(pricePerUnit) || 
-               quantity < 0 || pricePerUnit < 0;
+        const price = parseFloat(material.price);
+        const discount = parseFloat(material.discount);
+        return isNaN(price) || isNaN(discount) || price < 0 || discount < 0;
       });
       
       if (hasInvalidData) {
-        alert('Please enter valid quantity and price per unit values for all materials.');
+        alert('Please enter valid price and discount values for all materials.');
         setIsSaving(false);
         return;
       }
       
       // Check if all materials have prices entered
       const allPricesEntered = billingData.materialBilling.every(material => {
-        const pricePerUnit = parseFloat(material.pricePerUnit);
-        return pricePerUnit > 0;
+        const price = parseFloat(material.price);
+        return price > 0;
       });
       
       if (!allPricesEntered) {
@@ -601,35 +555,25 @@ export default function AdminGRN() {
       console.log('💾 Saving billing data...');
       console.log('📝 User-entered invoice number:', billingData.invoiceNumber);
       console.log('🤖 Auto-generated invoice number:', autoInvoiceNumber);
-      console.log('📊 Current billing state:', billingData);
       
       // Ensure all numeric values are properly formatted
       const sanitizedBillingData = {
+        ...billingData,
         invoiceNumber: billingData.invoiceNumber || autoInvoiceNumber,  // Use user-entered or auto-generate
         billDate: billingData.billDate || currentDateTime,  // Use user-entered or set current date-time
         companyName: billingData.companyName || 'Laxmi Powertech Private Limited',
         materialBilling: billingData.materialBilling.map(material => ({
-          materialId: material.materialId,
-          materialName: material.materialName,
-          quantity: parseFloat(material.quantity) || 0,
-          pricePerUnit: parseFloat(material.pricePerUnit) || 0,
-          totalPrice: parseFloat(material.totalPrice) || 0,
-          discountAmount: parseFloat(material.discountAmount) || 0,
-          finalCost: parseFloat(material.finalCost) || 0
+          ...material,
+          price: parseFloat(material.price) || 0,
+          discount: parseFloat(material.discount) || 0,
+          totalAmount: parseFloat(material.totalAmount) || 0
         })),
         totalPrice: parseFloat(billingData.totalPrice) || 0,
         totalDiscount: parseFloat(billingData.totalDiscount) || 0,
         finalAmount: parseFloat(billingData.finalAmount) || 0
       };
       
-      console.log('📤 Sending to backend:');
-      console.log('   Invoice Number:', sanitizedBillingData.invoiceNumber);
-      console.log('   Material billing items:', sanitizedBillingData.materialBilling);
-      console.log('   Totals:', {
-        totalPrice: sanitizedBillingData.totalPrice,
-        totalDiscount: sanitizedBillingData.totalDiscount,
-        finalAmount: sanitizedBillingData.finalAmount
-      });
+      console.log('📤 Sending to backend - Invoice Number:', sanitizedBillingData.invoiceNumber);
       
       const response = await upcomingDeliveryAPI.updateBilling(selectedDelivery._id, sanitizedBillingData);
       
@@ -637,33 +581,30 @@ export default function AdminGRN() {
       console.log('✅ Saved invoice number:', response.data?.billing?.invoiceNumber);
       
       if (response.success) {
-        console.log('✅ Billing saved successfully');
-        console.log('   Saved billing data:', response.data.billing);
-        console.log('   MaterialBilling array:', response.data.billing?.materialBilling);
-        
-        // Refetch GRN records to ensure table has latest data
-        await fetchGRNRecords();
-        
-        // Update selectedDelivery with fresh data
+        // Update local state
         setSelectedDelivery(response.data);
         
-        // Directly use the saved billing data from backend response
-        // This preserves the exact values that were saved
-        const savedBilling = response.data.billing;
-        if (savedBilling) {
-          setBillingData({
-            invoiceNumber: savedBilling.invoiceNumber || '',
-            billDate: savedBilling.billDate ? new Date(savedBilling.billDate).toISOString().split('T')[0] : '',
-            companyName: savedBilling.companyName || 'Laxmi Powertech Private Limited',
-            materialBilling: savedBilling.materialBilling || [],
-            totalPrice: savedBilling.totalPrice || 0,
-            totalDiscount: savedBilling.totalDiscount || 0,
-            finalAmount: savedBilling.finalAmount || 0
-          });
-        }
+        // Update billing data with saved values from response
+        setBillingData({
+          invoiceNumber: response.data.billing?.invoiceNumber || '',
+          billDate: response.data.billing?.billDate || '',
+          materialBilling: response.data.billing?.materialBilling || [],
+          totalPrice: response.data.billing?.totalPrice || 0,
+          totalDiscount: response.data.billing?.totalDiscount || 0,
+          finalAmount: response.data.billing?.finalAmount || 0,
+          companyName: response.data.billing?.companyName || 'Laxmi Powertech Private Limited'
+        });
+        
+        // Update deliveries list
+        setDeliveries(prev => prev.map(d => 
+          d._id === response.data._id ? response.data : d
+        ));
+        
+        // Refetch GRN records to ensure table has latest data
+        fetchGRNRecords();
         
         setIsEditMode(false);
-        alert('Bill saved successfully! All billing details have been updated.');
+        alert('Bill saved successfully! Invoice number and date-time have been assigned.');
       }
     } catch (err) {
       console.error('Error updating billing:', err);
@@ -1284,11 +1225,9 @@ export default function AdminGRN() {
                     return delivery.items && delivery.items.length > 0 ? (
                       delivery.items.map((item, itemIndex) => {
                         const srNo = deliveryIndex * 100 + itemIndex + 1;
-                        // Match by index first (most reliable), then by name
-                        const materialBilling = delivery.billing?.materialBilling?.[itemIndex] || 
-                          delivery.billing?.materialBilling?.find(
-                            mb => mb.materialName === item.name || mb.materialName === item.category
-                          );
+                        const materialBilling = delivery.billing?.materialBilling?.find(
+                          mb => mb.materialName === item.name || mb.materialName === item.category
+                        );
                         
                         return (
                           <tr key={`${delivery._id}-${itemIndex}`} className="hover:bg-gray-50">
@@ -1316,24 +1255,18 @@ export default function AdminGRN() {
                               {item.received_quantity || item.quantity || item.st_quantity || 0} {item.uom || ''}
                             </td>
                             <td className="border px-2 py-2 text-right text-gray-900">
-                              {(materialBilling?.pricePerUnit || materialBilling?.price) 
-                                ? `₹${(materialBilling?.pricePerUnit || materialBilling?.price).toLocaleString('en-IN')}` 
-                                : '-'}
+                              {materialBilling?.price ? `₹${materialBilling.price.toLocaleString('en-IN')}` : '-'}
                             </td>
                             <td className="border px-2 py-2 text-right font-medium text-gray-900">
-                              {(materialBilling?.totalPrice || materialBilling?.amount) 
-                                ? `₹${(materialBilling?.totalPrice || materialBilling?.amount).toLocaleString('en-IN')}` 
+                              {materialBilling?.price && item.received_quantity 
+                                ? `₹${(materialBilling.price * (item.received_quantity || 0)).toLocaleString('en-IN')}` 
                                 : '-'}
                             </td>
                             <td className="border px-2 py-2 text-right text-red-600">
-                              {materialBilling?.discountAmount 
-                                ? `₹${materialBilling.discountAmount.toLocaleString('en-IN')}` 
-                                : (materialBilling?.discount ? `${materialBilling.discount}%` : '-')}
+                              {materialBilling?.discount ? `${materialBilling.discount}%` : '-'}
                             </td>
                             <td className="border px-2 py-2 text-right font-bold text-green-700 bg-green-50">
-                              {(materialBilling?.finalCost || materialBilling?.totalAmount) 
-                                ? `₹${(materialBilling?.finalCost || materialBilling?.totalAmount).toLocaleString('en-IN')}` 
-                                : '-'}
+                              {materialBilling?.totalAmount ? `₹${materialBilling.totalAmount.toLocaleString('en-IN')}` : '-'}
                             </td>
                             <td className="border px-2 py-2 text-gray-900">{delivery.to || '-'}</td>
                             <td className="border px-2 py-2 text-gray-900">{delivery.from || delivery.vendor || '-'}</td>
@@ -1588,43 +1521,62 @@ export default function AdminGRN() {
                     <thead className="bg-gray-100">
                       <tr>
                         <th className="border px-4 py-3 text-left font-semibold text-gray-700">Material Name</th>
-                        <th className="border px-4 py-3 text-center font-semibold text-gray-700">Quantity</th>
-                        <th className="border px-4 py-3 text-left font-semibold text-gray-700">Price/Unit (₹)</th>
-                        <th className="border px-4 py-3 text-left font-semibold text-gray-700 bg-blue-50">Total Price (₹)</th>
-                        <th className="border px-4 py-3 text-left font-semibold text-gray-700 bg-red-50">Discount (5%)</th>
-                        <th className="border px-4 py-3 text-left font-semibold text-gray-700 bg-green-50">Final Cost (₹)</th>
+                        <th className="border px-4 py-3 text-left font-semibold text-gray-700">Price (₹)</th>
+                        <th className="border px-4 py-3 text-left font-semibold text-gray-700">Discount</th>
+                        <th className="border px-4 py-3 text-left font-semibold text-gray-700 bg-green-50">Total Amount (₹)</th>
                       </tr>
                     </thead>
                     <tbody>
                       {billingData.materialBilling.map((material, index) => (
                         <tr key={material.materialId} className="hover:bg-gray-50">
                           <td className="border px-4 py-3 font-medium text-gray-900">{material.materialName}</td>
-                          <td className="border px-4 py-3 text-center">
-                            <span className="font-semibold text-gray-900">{safeNumber(material.quantity)}</span>
-                          </td>
                           <td className="border px-4 py-3">
                             {isEditMode ? (
                               <input
                                 type="number"
-                                value={safeNumber(material.pricePerUnit)}
-                                onChange={(e) => handleMaterialBillingChange(material.materialId, 'pricePerUnit', e.target.value)}
+                                value={safeNumber(material.price)}
+                                onChange={(e) => handleMaterialBillingChange(material.materialId, 'price', e.target.value)}
                                 className="w-full border-2 border-blue-400 bg-white rounded-lg px-3 py-2 text-sm font-semibold text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-600 shadow-sm"
-                                placeholder="Enter price per unit"
+                                placeholder="Enter price"
                                 step="0.01"
                                 min="0"
                               />
                             ) : (
-                              <span className="font-semibold text-gray-900">{formatCurrency(material.pricePerUnit)}</span>
+                              <span className="font-semibold text-gray-900">{formatCurrency(material.price)}</span>
                             )}
                           </td>
-                          <td className="border px-4 py-3 bg-blue-50">
-                            <span className="font-bold text-blue-700">{formatCurrency(material.totalPrice)}</span>
-                          </td>
-                          <td className="border px-4 py-3 bg-red-50">
-                            <span className="font-semibold text-red-600">{formatCurrency(material.discountAmount)}</span>
+                          <td className="border px-4 py-3">
+                            {isEditMode ? (
+                              <div className="flex gap-2">
+                                <select
+                                  value={material.discountType || 'flat'}
+                                  onChange={(e) => handleMaterialBillingChange(material.materialId, 'discountType', e.target.value)}
+                                  className="border-2 border-blue-400 bg-white rounded-lg px-3 py-2 text-sm font-semibold text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-600 shadow-sm"
+                                >
+                                  <option value="flat">₹</option>
+                                  <option value="percentage">%</option>
+                                </select>
+                                <input
+                                  type="number"
+                                  value={safeNumber(material.discount)}
+                                  onChange={(e) => handleMaterialBillingChange(material.materialId, 'discount', e.target.value)}
+                                  className="flex-1 border-2 border-blue-400 bg-white rounded-lg px-3 py-2 text-sm font-semibold text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-600 shadow-sm"
+                                  placeholder="Enter discount"
+                                  step={material.discountType === 'percentage' ? '1' : '0.01'}
+                                  min="0"
+                                  max={material.discountType === 'percentage' ? '100' : undefined}
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-gray-900">
+                                {safeNumber(material.discount) > 0 
+                                  ? `${safeNumber(material.discount)}${material.discountType === 'percentage' ? '%' : '₹'}`
+                                  : '-'}
+                              </span>
+                            )}
                           </td>
                           <td className="border px-4 py-3 bg-green-50">
-                            <span className="font-bold text-green-700 text-lg">{formatCurrency(material.finalCost)}</span>
+                            <span className="font-bold text-green-700 text-lg">{formatCurrency(material.totalAmount)}</span>
                           </td>
                         </tr>
                       ))}
