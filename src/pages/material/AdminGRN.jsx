@@ -558,9 +558,14 @@ export default function AdminGRN() {
         return;
       }
       
-      // Auto-generate invoice number and set current date-time
+      // Preserve user-entered invoice number or auto-generate if empty
       const autoInvoiceNumber = extractBasePOId(selectedDelivery.transfer_number || selectedDelivery.st_id);
       const currentDateTime = new Date().toISOString();
+      
+      // Log current state for debugging
+      console.log('💾 Saving billing data...');
+      console.log('📝 User-entered invoice number:', billingData.invoiceNumber);
+      console.log('🤖 Auto-generated invoice number:', autoInvoiceNumber);
       
       // Ensure all numeric values are properly formatted
       const sanitizedBillingData = {
@@ -579,7 +584,12 @@ export default function AdminGRN() {
         finalAmount: parseFloat(billingData.finalAmount) || 0
       };
       
+      console.log('📤 Sending to backend - Invoice Number:', sanitizedBillingData.invoiceNumber);
+      
       const response = await upcomingDeliveryAPI.updateBilling(selectedDelivery._id, sanitizedBillingData);
+      
+      console.log('📥 Backend response received');
+      console.log('✅ Saved invoice number:', response.data?.billing?.invoiceNumber);
       
       if (response.success) {
         // Update local state
