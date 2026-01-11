@@ -419,13 +419,19 @@ export default function AdminGRN() {
         mb => mb.materialId === item._id || mb.materialName === item.category
       );
       
+      const quantity = item.received_quantity || item.st_quantity || 0;
+      const pricePerUnit = existingBilling?.pricePerUnit || 0;
+      const amount = quantity * pricePerUnit;
+      
       return {
         materialId: item._id || `material-${index}`,
         materialName: item.category || 'Unknown Material',
-        price: existingBilling?.price || 0,
+        quantity: quantity,
+        pricePerUnit: pricePerUnit,
+        amount: amount,
         discount: existingBilling?.discount || 0,
         discountType: existingBilling?.discountType || 'flat',
-        totalAmount: existingBilling?.totalAmount || 0
+        totalAmount: existingBilling?.totalAmount || amount
       };
     }) || [];
     
@@ -453,27 +459,29 @@ export default function AdminGRN() {
 
   // Calculate totals from material billing
   const calculateTotals = (materialBilling) => {
-    let totalPrice = 0;
+    let totalAmount = 0;
     let totalDiscountAmount = 0;
     
     materialBilling.forEach(material => {
-      const price = parseFloat(material.price) || 0;
+      const quantity = parseFloat(material.quantity) || 0;
+      const pricePerUnit = parseFloat(material.pricePerUnit) || 0;
+      const amount = quantity * pricePerUnit;
       const discount = parseFloat(material.discount) || 0;
       const discountType = material.discountType || 'flat';
       
-      totalPrice += price;
+      totalAmount += amount;
       
       if (discountType === 'percentage') {
-        totalDiscountAmount += (price * discount / 100);
+        totalDiscountAmount += (amount * discount / 100);
       } else {
         totalDiscountAmount += discount;
       }
     });
     
     return {
-      totalPrice,
+      totalPrice: totalAmount,
       totalDiscount: totalDiscountAmount,
-      finalAmount: totalPrice - totalDiscountAmount
+      finalAmount: totalAmount - totalDiscountAmount
     };
   };
 
@@ -482,25 +490,30 @@ export default function AdminGRN() {
       if (material.materialId === materialId) {
         // Parse numeric values immediately
         let updatedValue = value;
-        if (field === 'price' || field === 'discount') {
+        if (field === 'pricePerUnit' || field === 'discount') {
           updatedValue = parseFloat(value) || 0;
         }
         
         const updatedMaterial = { ...material, [field]: updatedValue };
         
-        // Recalculate total amount for this material
-        const price = parseFloat(updatedMaterial.price) || 0;
+        // Recalculate amount and total for this material
+        const quantity = parseFloat(updatedMaterial.quantity) || 0;
+        const pricePerUnit = parseFloat(updatedMaterial.pricePerUnit) || 0;
+        const amount = quantity * pricePerUnit;
         const discount = parseFloat(updatedMaterial.discount) || 0;
         const discountType = updatedMaterial.discountType;
         
+        updatedMaterial.amount = amount;
+        
         if (discountType === 'percentage') {
-          updatedMaterial.totalAmount = Math.max(0, price - (price * discount / 100));
+          updatedMaterial.totalAmount = Math.max(0, amount - (amount * discount / 100));
         } else {
-          updatedMaterial.totalAmount = Math.max(0, price - discount);
+          updatedMaterial.totalAmount = Math.max(0, amount - discount);
         }
         
         // Ensure all numeric fields are numbers
-        updatedMaterial.price = price;
+        updatedMaterial.quantity = quantity;
+        updatedMaterial.pricePerUnit = pricePerUnit;
         updatedMaterial.discount = discount;
         
         return updatedMaterial;
@@ -522,23 +535,25 @@ export default function AdminGRN() {
     try {
       setIsSaving(true);
       
-      // Validate billing data - ensure all materials have prices
+      // Validate billing data - ensure all materials have valid data
       const hasInvalidData = billingData.materialBilling.some(material => {
-        const price = parseFloat(material.price);
+        const quantity = parseFloat(material.quantity);
+        const pricePerUnit = parseFloat(material.pricePerUnit);
         const discount = parseFloat(material.discount);
-        return isNaN(price) || isNaN(discount) || price < 0 || discount < 0;
+        return isNaN(quantity) || isNaN(pricePerUnit) || isNaN(discount) || 
+               quantity < 0 || pricePerUnit < 0 || discount < 0;
       });
       
       if (hasInvalidData) {
-        alert('Please enter valid price and discount values for all materials.');
+        alert('Please enter valid quantity, price per unit, and discount values for all materials.');
         setIsSaving(false);
         return;
       }
       
       // Check if all materials have prices entered
       const allPricesEntered = billingData.materialBilling.every(material => {
-        const price = parseFloat(material.price);
-        return price > 0;
+        const pricePerUnit = parseFloat(material.pricePerUnit);
+        return pricePerUnit > 0;
       });
       
       if (!allPricesEntered) {
@@ -1521,29 +1536,37 @@ export default function AdminGRN() {
                     <thead className="bg-gray-100">
                       <tr>
                         <th className="border px-4 py-3 text-left font-semibold text-gray-700">Material Name</th>
-                        <th className="border px-4 py-3 text-left font-semibold text-gray-700">Price (₹)</th>
+                        <th className="border px-4 py-3 text-center font-semibold text-gray-700">Quantity</th>
+                        <th className="border px-4 py-3 text-left font-semibold text-gray-700">Price/Unit (₹)</th>
+                        <th className="border px-4 py-3 text-left font-semibold text-gray-700 bg-blue-50">Amount (₹)</th>
                         <th className="border px-4 py-3 text-left font-semibold text-gray-700">Discount</th>
-                        <th className="border px-4 py-3 text-left font-semibold text-gray-700 bg-green-50">Total Amount (₹)</th>
+                        <th className="border px-4 py-3 text-left font-semibold text-gray-700 bg-green-50">Total (₹)</th>
                       </tr>
                     </thead>
                     <tbody>
                       {billingData.materialBilling.map((material, index) => (
                         <tr key={material.materialId} className="hover:bg-gray-50">
                           <td className="border px-4 py-3 font-medium text-gray-900">{material.materialName}</td>
+                          <td className="border px-4 py-3 text-center">
+                            <span className="font-semibold text-gray-900">{safeNumber(material.quantity)}</span>
+                          </td>
                           <td className="border px-4 py-3">
                             {isEditMode ? (
                               <input
                                 type="number"
-                                value={safeNumber(material.price)}
-                                onChange={(e) => handleMaterialBillingChange(material.materialId, 'price', e.target.value)}
+                                value={safeNumber(material.pricePerUnit)}
+                                onChange={(e) => handleMaterialBillingChange(material.materialId, 'pricePerUnit', e.target.value)}
                                 className="w-full border-2 border-blue-400 bg-white rounded-lg px-3 py-2 text-sm font-semibold text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-600 shadow-sm"
-                                placeholder="Enter price"
+                                placeholder="Enter price per unit"
                                 step="0.01"
                                 min="0"
                               />
                             ) : (
-                              <span className="font-semibold text-gray-900">{formatCurrency(material.price)}</span>
+                              <span className="font-semibold text-gray-900">{formatCurrency(material.pricePerUnit)}</span>
                             )}
+                          </td>
+                          <td className="border px-4 py-3 bg-blue-50">
+                            <span className="font-bold text-blue-700">{formatCurrency(material.amount)}</span>
                           </td>
                           <td className="border px-4 py-3">
                             {isEditMode ? (
