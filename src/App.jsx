@@ -35,6 +35,7 @@ const CreateReimbursement = lazy(() => import('./pages/CreateReimbursement'));
 const AdminReimbursements = lazy(() => import('./pages/AdminReimbursements'));
 const SupervisorDashboard = lazy(() => import('./pages/SupervisorDashboard'));
 const SupervisorProjectList = lazy(() => import('./pages/SupervisorProjectList'));
+const LabourDashboard = lazy(() => import('./pages/LabourDashboard'));
 
 // Material Management Pages - Lazy loaded
 const Material = lazy(() => import('./pages/material/Material'));
