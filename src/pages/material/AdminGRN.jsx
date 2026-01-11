@@ -579,20 +579,32 @@ export default function AdminGRN() {
       
       console.log('📥 Backend response received');
       console.log('✅ Saved invoice number:', response.data?.billing?.invoiceNumber);
+      console.log('📊 Backend billing data:', response.data?.billing);
+      console.log('📦 Material billing count:', response.data?.billing?.materialBilling?.length);
       
       if (response.success) {
         // Update local state
         setSelectedDelivery(response.data);
         
+        // Ensure materialBilling is properly formatted from response
+        const savedMaterialBilling = response.data.billing?.materialBilling || [];
+        console.log('💾 Saved material billing:', savedMaterialBilling);
+        
         // Update billing data with saved values from response
         setBillingData({
           invoiceNumber: response.data.billing?.invoiceNumber || '',
           billDate: response.data.billing?.billDate || '',
-          materialBilling: response.data.billing?.materialBilling || [],
+          materialBilling: savedMaterialBilling,
           totalPrice: response.data.billing?.totalPrice || 0,
           totalDiscount: response.data.billing?.totalDiscount || 0,
           finalAmount: response.data.billing?.finalAmount || 0,
           companyName: response.data.billing?.companyName || 'Laxmi Powertech Private Limited'
+        });
+        
+        console.log('🔄 Updated billingData state with:', {
+          materialBillingCount: savedMaterialBilling.length,
+          totalPrice: response.data.billing?.totalPrice,
+          totalDiscount: response.data.billing?.totalDiscount
         });
         
         // Update deliveries list
