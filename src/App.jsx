@@ -143,7 +143,7 @@ function App() {
 
         {/* Supervisor/Subcontractor Routes */}
         <Route path="/supervisor/projects" element={<SupervisorProjectList />} />
-        <Route path="/project/:projectId/labour-dashboard" element={<LabourDashboard />} />
+        <Route path="/branch/:branchId/labour-dashboard" element={<LabourDashboard />} />
 
         {/* Admin Dashboard Route */}
         <Route path="/admindashboard" element={<AdminDashboard />} />

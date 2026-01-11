@@ -20,24 +20,30 @@ const SupervisorProjectList = () => {
   const fetchAssignedProjects = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/projects', {
+      const res = await axios.get('/branches', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      // Filter projects based on user's assigned project field
-      // User model has a 'project' field that stores the assigned project ID
-      let assignedProjects = [];
+      // Filter branches based on user's assignedBranches array
+      // User model has an 'assignedBranches' field that stores array of branch IDs
+      let assignedBranches = [];
       
-      if (user.project) {
-        // User has an assigned project - filter to show only that project
-        const projectId = typeof user.project === 'object' ? user.project._id : user.project;
-        assignedProjects = res.data.filter(project => project._id === projectId);
+      if (user.assignedBranches && user.assignedBranches.length > 0) {
+        // Extract branch IDs from user.assignedBranches (handle both object and string formats)
+        const assignedBranchIds = user.assignedBranches.map(branch => 
+          typeof branch === 'object' ? branch._id : branch
+        );
+        
+        // Filter branches to show only assigned ones
+        assignedBranches = res.data.filter(branch => 
+          assignedBranchIds.includes(branch._id)
+        );
       }
       
-      // Only show assigned projects, never show all projects
-      setProjects(assignedProjects);
+      // Only show assigned branches, never show all branches
+      setProjects(assignedBranches);
     } catch (err) {
-      console.error('Failed to fetch projects', err);
+      console.error('Failed to fetch branches', err);
       // If API fails, show empty list
       setProjects([]);
     } finally {
@@ -52,9 +58,9 @@ const SupervisorProjectList = () => {
     navigate('/login', { replace: true });
   };
 
-  const handleProjectClick = (projectId) => {
-    // Navigate to Labour dashboard for this specific project
-    navigate(`/project/${projectId}/labour-dashboard`);
+  const handleProjectClick = (branchId) => {
+    // Navigate to Labour dashboard for this specific branch
+    navigate(`/branch/${branchId}/labour-dashboard`);
   };
 
   const filteredProjects = projects.filter(project =>
@@ -119,7 +125,7 @@ const SupervisorProjectList = () => {
               </div>
               <h3 className="text-lg font-semibold text-gray-800 mb-2">No Projects Found</h3>
               <p className="text-sm text-gray-500">
-                {searchTerm ? 'Try a different search term' : 'No projects assigned to you yet'}
+                {searchTerm ? 'Try a different search term' : 'No branches assigned to you yet'}
               </p>
             </div>
           ) : (
