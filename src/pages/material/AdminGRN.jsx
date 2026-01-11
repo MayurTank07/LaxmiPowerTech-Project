@@ -1238,7 +1238,7 @@ export default function AdminGRN() {
               <div className="grid grid-cols-2 gap-4 pb-4 border-b">
                 <div>
                   <label className="text-sm font-medium text-gray-600">
-                    {selectedDelivery.type === 'PO' ? 'Vendor-wise PO ID' : 'Site Transfer ID'}
+                    {selectedDelivery.type === 'PO' ? 'Intent PO ID' : 'Site Transfer ID'}
                   </label>
                   <p className="text-gray-900 font-semibold">{selectedDelivery.transfer_number || selectedDelivery.st_id}</p>
                 </div>
@@ -1315,18 +1315,31 @@ export default function AdminGRN() {
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="text-sm font-semibold text-gray-700 block mb-1">
-                      Invoice Number <span className="text-xs text-orange-600">(Auto-generated)</span>
+                      Invoice Number
                     </label>
-                    <div className="bg-white border-2 border-orange-300 rounded px-3 py-2">
-                      <p className="text-gray-900 font-bold">{billingData.invoiceNumber || 'Not set'}</p>
-                    </div>
+                    {isEditMode ? (
+                      <input
+                        type="text"
+                        value={billingData.invoiceNumber || ''}
+                        onChange={(e) => setBillingData({ ...billingData, invoiceNumber: e.target.value })}
+                        className="w-full bg-white border-2 border-orange-300 rounded px-3 py-2 text-gray-900 font-bold focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        placeholder="Enter invoice number"
+                      />
+                    ) : (
+                      <div className="bg-white border-2 border-orange-300 rounded px-3 py-2">
+                        <p className="text-gray-900 font-bold">{billingData.invoiceNumber || 'Not set'}</p>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className="text-sm font-semibold text-gray-700 block mb-1">Bill Date & Time</label>
                     {isEditMode ? (
-                      <div className="bg-gray-100 border-2 border-gray-400 rounded-lg px-3 py-2">
-                        <p className="text-sm text-gray-600 italic">Auto-set on save</p>
-                      </div>
+                      <input
+                        type="datetime-local"
+                        value={billingData.billDate ? new Date(billingData.billDate).toISOString().slice(0, 16) : ''}
+                        onChange={(e) => setBillingData({ ...billingData, billDate: e.target.value })}
+                        className="w-full bg-white border-2 border-orange-300 rounded px-3 py-2 text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      />
                     ) : (
                       <div className="bg-white border-2 border-orange-300 rounded px-3 py-2">
                         <p className="text-gray-900 font-medium">
