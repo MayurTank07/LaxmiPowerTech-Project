@@ -509,6 +509,8 @@ export default function AdminGRN() {
   };
 
   const handleMaterialBillingChange = (materialId, field, value) => {
+    console.log('📝 Billing change:', { materialId, field, value });
+    
     const updatedMaterialBilling = billingData.materialBilling.map(material => {
       if (material.materialId === materialId) {
         // Parse numeric values immediately
@@ -532,6 +534,15 @@ export default function AdminGRN() {
         updatedMaterial.discountAmount = discountAmount;
         updatedMaterial.finalCost = finalCost;
         
+        console.log('   Updated material:', {
+          materialName: updatedMaterial.materialName,
+          quantity,
+          pricePerUnit,
+          totalPrice,
+          discountAmount,
+          finalCost
+        });
+        
         return updatedMaterial;
       }
       return material;
@@ -539,6 +550,8 @@ export default function AdminGRN() {
     
     // Recalculate totals
     const totals = calculateTotals(updatedMaterialBilling);
+    
+    console.log('   New totals:', totals);
     
     setBillingData({
       ...billingData,
@@ -585,6 +598,7 @@ export default function AdminGRN() {
       console.log('💾 Saving billing data...');
       console.log('📝 User-entered invoice number:', billingData.invoiceNumber);
       console.log('🤖 Auto-generated invoice number:', autoInvoiceNumber);
+      console.log('📊 Current billing state:', billingData);
       
       // Ensure all numeric values are properly formatted
       const sanitizedBillingData = {
@@ -605,7 +619,14 @@ export default function AdminGRN() {
         finalAmount: parseFloat(billingData.finalAmount) || 0
       };
       
-      console.log('📤 Sending to backend - Invoice Number:', sanitizedBillingData.invoiceNumber);
+      console.log('📤 Sending to backend:');
+      console.log('   Invoice Number:', sanitizedBillingData.invoiceNumber);
+      console.log('   Material billing items:', sanitizedBillingData.materialBilling);
+      console.log('   Totals:', {
+        totalPrice: sanitizedBillingData.totalPrice,
+        totalDiscount: sanitizedBillingData.totalDiscount,
+        finalAmount: sanitizedBillingData.finalAmount
+      });
       
       const response = await upcomingDeliveryAPI.updateBilling(selectedDelivery._id, sanitizedBillingData);
       
