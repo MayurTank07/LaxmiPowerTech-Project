@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, Package, Receipt, Edit2, Save, XCircle, DollarSign, Download, FileText, FileSpreadsheet, Trash2, X, Calendar, MapPin, User, TrendingUp } from 'lucide-react';
+import { Search, Eye, Package, Receipt, Edit2, Save, XCircle, DollarSign, Download, FileText, FileSpreadsheet, Trash2, X, Calendar, MapPin, User, TrendingUp, CalendarDays } from 'lucide-react';
 import { upcomingDeliveryAPI, branchesAPI } from '../../utils/materialAPI';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
@@ -1125,90 +1125,94 @@ export default function AdminGRN() {
               <table className="min-w-full border-collapse border border-gray-200 text-sm">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="border px-4 py-2 text-left font-medium text-gray-700">GRN ID</th>
-                    <th className="border px-4 py-2 text-left font-medium text-gray-700">Type</th>
-                    <th className="border px-4 py-2 text-left font-medium text-gray-700">From</th>
-                    <th className="border px-4 py-2 text-left font-medium text-gray-700">To</th>
-                    <th className="border px-4 py-2 text-left font-medium text-gray-700">Requested By</th>
-                    <th className="border px-4 py-2 text-left font-medium text-gray-700 bg-orange-50">Invoice Number</th>
-                    <th className="border px-4 py-2 text-left font-medium text-gray-700 bg-orange-50">Price (₹)</th>
-                    <th className="border px-4 py-2 text-left font-medium text-gray-700 bg-orange-50">Bill Date</th>
-                    <th className="border px-4 py-2 text-left font-medium text-gray-700 bg-orange-50">Discount</th>
-                    <th className="border px-4 py-2 text-left font-medium text-gray-700 bg-orange-50">Amount (₹)</th>
-                    <th className="border px-4 py-2 text-left font-medium text-gray-700">Status</th>
-                    <th className="border px-4 py-2 text-left font-medium text-gray-700">Date</th>
-                    <th className="border px-4 py-2 text-left font-medium text-gray-700">Actions</th>
+                    <th className="border px-3 py-2 text-left font-medium text-gray-700">Sr No.</th>
+                    <th className="border px-3 py-2 text-left font-medium text-gray-700 bg-orange-50">Invoice No</th>
+                    <th className="border px-3 py-2 text-left font-medium text-gray-700">Date</th>
+                    <th className="border px-3 py-2 text-left font-medium text-gray-700">Category</th>
+                    <th className="border px-3 py-2 text-left font-medium text-gray-700">Category 1</th>
+                    <th className="border px-3 py-2 text-left font-medium text-gray-700">Category 2</th>
+                    <th className="border px-3 py-2 text-left font-medium text-gray-700">Quantity</th>
+                    <th className="border px-3 py-2 text-right font-medium text-gray-700 bg-blue-50">Price (₹)</th>
+                    <th className="border px-3 py-2 text-right font-medium text-gray-700 bg-blue-50">Amount (₹)</th>
+                    <th className="border px-3 py-2 text-right font-medium text-gray-700 bg-orange-50">Discount</th>
+                    <th className="border px-3 py-2 text-right font-medium text-gray-700 bg-green-50">Total (₹)</th>
+                    <th className="border px-3 py-2 text-left font-medium text-gray-700">Project Name</th>
+                    <th className="border px-3 py-2 text-left font-medium text-gray-700">Vendor Name</th>
+                    <th className="border px-3 py-2 text-left font-medium text-gray-700">Remark</th>
+                    <th className="border px-3 py-2 text-left font-medium text-gray-700">Company Name</th>
+                    <th className="border px-3 py-2 text-center font-medium text-gray-700">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredDeliveries.map((delivery) => (
-                    <tr key={delivery._id} className="hover:bg-gray-50">
-                      <td className="border px-4 py-2 font-medium text-gray-900">
-                        <div className="flex flex-col">
-                          <span className="font-semibold">{delivery.transfer_number || delivery.st_id || 'N/A'}</span>
-                          <span className="text-xs text-gray-500">
-                            {delivery.type === 'PO' ? 'Vendor-wise PO' : 'ST ID'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="border px-4 py-2">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          delivery.type === 'PO' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
-                        }`}>
-                          {delivery.type === 'PO' ? 'Purchase Order' : 'Site Transfer'}
-                        </span>
-                      </td>
-                      <td className="border px-4 py-2">{delivery.from || 'N/A'}</td>
-                      <td className="border px-4 py-2">{delivery.to || 'N/A'}</td>
-                      <td className="border px-4 py-2">{delivery.createdBy || 'N/A'}</td>
+                  {filteredDeliveries.flatMap((delivery, deliveryIdx) => 
+                    (delivery.items || []).map((item, itemIdx) => {
+                      const materialBilling = delivery.billing?.materialBilling?.find(
+                        mb => mb.materialId === item._id || mb.materialName === item.category
+                      ) || {};
                       
-                      {/* Billing Columns */}
-                      <td className="border px-4 py-2 bg-orange-50 font-medium text-gray-900">
-                        {delivery.billing?.invoiceNumber || '-'}
-                      </td>
-                      <td className="border px-4 py-2 bg-orange-50 font-semibold text-gray-900">
-                        {delivery.billing?.totalPrice ? formatCurrency(delivery.billing.totalPrice) : '-'}
-                      </td>
-                      <td className="border px-4 py-2 bg-orange-50 text-gray-700">
-                        {delivery.billing?.billDate 
-                          ? new Date(delivery.billing.billDate).toLocaleDateString('en-IN', { 
-                              year: 'numeric', 
-                              month: 'short', 
-                              day: 'numeric' 
-                            })
-                          : '-'}
-                      </td>
-                      <td className="border px-4 py-2 bg-orange-50 text-gray-900">
-                        {delivery.billing?.totalDiscount 
-                          ? formatCurrency(delivery.billing.totalDiscount)
-                          : '-'}
-                      </td>
-                      <td className="border px-4 py-2 bg-orange-50 font-bold text-green-700">
-                        {delivery.billing?.finalAmount ? formatCurrency(delivery.billing.finalAmount) : '-'}
-                      </td>
+                      const price = materialBilling.price || 0;
+                      const quantity = item.received_quantity || item.quantity || 0;
+                      const amount = price * quantity;
+                      const discount = materialBilling.discount || 0;
+                      const total = materialBilling.totalAmount || (amount - discount);
+                      const srNo = deliveryIdx * (delivery.items?.length || 0) + itemIdx + 1;
                       
-                      <td className="border px-4 py-2">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(delivery.status)}`}>
-                          {delivery.status?.charAt(0).toUpperCase() + delivery.status?.slice(1)}
-                        </span>
-                      </td>
-                      <td className="border px-4 py-2">
-                        <div className="flex flex-col">
-                          <span className="text-gray-900 font-medium text-sm">{formatDate(delivery.createdAt)}</span>
-                          <span className="text-xs text-gray-500">Intent Request</span>
-                        </div>
-                      </td>
-                      <td className="border px-4 py-2">
-                        <button
-                          onClick={() => handleViewDetails(delivery)}
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                          title="View Details"
-                        >
-                          <Eye size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                      return (
+                        <tr key={`${delivery._id}-${itemIdx}`} className="hover:bg-gray-50">
+                          <td className="border px-3 py-2 text-gray-700">{srNo}</td>
+                          <td className="border px-3 py-2 bg-orange-50 font-medium text-gray-900">
+                            {delivery.billing?.invoiceNumber || '-'}
+                          </td>
+                          <td className="border px-3 py-2 text-gray-700">
+                            {delivery.billing?.billDate 
+                              ? new Date(delivery.billing.billDate).toLocaleDateString('en-IN', { 
+                                  year: 'numeric', 
+                                  month: 'short', 
+                                  day: 'numeric' 
+                                })
+                              : new Date(delivery.createdAt).toLocaleDateString('en-IN', { 
+                                  year: 'numeric', 
+                                  month: 'short', 
+                                  day: 'numeric' 
+                                })}
+                          </td>
+                          <td className="border px-3 py-2 font-medium text-gray-900">{item.category || '-'}</td>
+                          <td className="border px-3 py-2 text-gray-700">{item.sub_category || '-'}</td>
+                          <td className="border px-3 py-2 text-gray-700">{item.sub_category1 || '-'}</td>
+                          <td className="border px-3 py-2 text-gray-700">
+                            {quantity} {item.uom || ''}
+                          </td>
+                          <td className="border px-3 py-2 bg-blue-50 text-right font-semibold text-gray-900">
+                            {formatCurrency(price)}
+                          </td>
+                          <td className="border px-3 py-2 bg-blue-50 text-right font-semibold text-gray-900">
+                            {formatCurrency(amount)}
+                          </td>
+                          <td className="border px-3 py-2 bg-orange-50 text-right text-red-600 font-medium">
+                            {formatCurrency(discount)}
+                          </td>
+                          <td className="border px-3 py-2 bg-green-50 text-right font-bold text-green-700">
+                            {formatCurrency(total)}
+                          </td>
+                          <td className="border px-3 py-2 text-gray-700">{delivery.to || '-'}</td>
+                          <td className="border px-3 py-2 text-gray-700">{delivery.from || item.vendor || '-'}</td>
+                          <td className="border px-3 py-2 text-gray-600 text-xs">{item.remarks || '-'}</td>
+                          <td className="border px-3 py-2 text-gray-700">{delivery.from || '-'}</td>
+                          <td className="border px-3 py-2 text-center">
+                            {itemIdx === 0 && (
+                              <button
+                                onClick={() => handleViewDetails(delivery)}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                title="View GRN Details"
+                              >
+                                <Eye size={18} />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             )}
@@ -1334,12 +1338,15 @@ export default function AdminGRN() {
                   <div>
                     <label className="text-sm font-semibold text-gray-700 block mb-1">Bill Date & Time</label>
                     {isEditMode ? (
-                      <input
-                        type="datetime-local"
-                        value={billingData.billDate ? new Date(billingData.billDate).toISOString().slice(0, 16) : ''}
-                        onChange={(e) => setBillingData({ ...billingData, billDate: e.target.value })}
-                        className="w-full bg-white border-2 border-orange-300 rounded px-3 py-2 text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                      />
+                      <div className="relative">
+                        <input
+                          type="datetime-local"
+                          value={billingData.billDate ? new Date(billingData.billDate).toISOString().slice(0, 16) : ''}
+                          onChange={(e) => setBillingData({ ...billingData, billDate: e.target.value })}
+                          className="w-full bg-white border-2 border-orange-300 rounded pl-10 pr-3 py-2 text-gray-900 font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        />
+                        <CalendarDays className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-500" size={18} />
+                      </div>
                     ) : (
                       <div className="bg-white border-2 border-orange-300 rounded px-3 py-2">
                         <p className="text-gray-900 font-medium">
