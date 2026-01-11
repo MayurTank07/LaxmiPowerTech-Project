@@ -565,8 +565,8 @@ export default function AdminGRN() {
       // Ensure all numeric values are properly formatted
       const sanitizedBillingData = {
         ...billingData,
-        invoiceNumber: autoInvoiceNumber,  // Assign bill number on save
-        billDate: currentDateTime,  // Set current date-time on save
+        invoiceNumber: billingData.invoiceNumber || autoInvoiceNumber,  // Use user-entered or auto-generate
+        billDate: billingData.billDate || currentDateTime,  // Use user-entered or set current date-time
         companyName: billingData.companyName || 'Laxmi Powertech Private Limited',
         materialBilling: billingData.materialBilling.map(material => ({
           ...material,
